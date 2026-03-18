@@ -16,7 +16,7 @@ public final class EndpointUrl {
         if (url.isBlank()) {
             throw new IllegalArgumentException("Endpoint URL must not be blank");
         }
-        var uri = URI.create(url);
+        URI uri = URI.create(url);
         if (uri.getScheme() == null || uri.getHost() == null) {
             throw new IllegalArgumentException(
                     "Endpoint URL must have scheme and host: " + url);

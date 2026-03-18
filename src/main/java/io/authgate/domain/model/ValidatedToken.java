@@ -81,7 +81,32 @@ public final class ValidatedToken {
         return expected.matches(issuer);
     }
 
-    // ── Fluent Authorization Chain ──────────────────────────────
+
+    /**
+     * Validates this token against expected issuer, audience, and clock.
+     *
+     * <p>Checks are applied in order: expiration → issuer → audience.
+     * Returns {@link ValidationOutcome.Valid} if all pass,
+     * {@link ValidationOutcome.Rejected} with the first failing reason otherwise.</p>
+     *
+     * @param expectedIssuer   the expected token issuer
+     * @param expectedAudience expected audience claim, or {@code null} to skip the check
+     * @param clock            clock to use for expiration check (allows clock-skew tolerance)
+     */
+    public ValidationOutcome validateAgainst(IssuerUri expectedIssuer, String expectedAudience, Clock clock) {
+        if (hasExpired(clock)) {
+            return new ValidationOutcome.Rejected(RejectionReason.TOKEN_EXPIRED);
+        }
+        if (!isIssuedBy(expectedIssuer)) {
+            return new ValidationOutcome.Rejected(RejectionReason.ISSUER_MISMATCH);
+        }
+        if (expectedAudience != null && !expectedAudience.isBlank()
+                && !isIntendedFor(expectedAudience)) {
+            return new ValidationOutcome.Rejected(RejectionReason.AUDIENCE_MISMATCH);
+        }
+        return new ValidationOutcome.Valid(this);
+    }
+
 
     /**
      * Starts a fluent authorization check on this token.

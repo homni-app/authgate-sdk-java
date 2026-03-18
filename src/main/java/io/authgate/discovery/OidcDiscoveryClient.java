@@ -59,14 +59,14 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
 
     @Override
     public DiscoveredEndpoints discover() {
-        var endpoints = cachedEndpoints;
+        DiscoveredEndpoints endpoints = cachedEndpoints;
         if (endpoints != null) {
             return endpoints;
         }
-        var doc = resolveDocument();
+        OidcDiscoveryDocument doc = resolveDocument();
 
-        var tokenEndpoint = new EndpointUrl(doc.resolveTokenEndpoint());
-        var jwksUri = new EndpointUrl(doc.resolveJwksUri());
+        EndpointUrl tokenEndpoint = new EndpointUrl(doc.resolveTokenEndpoint());
+        EndpointUrl jwksUri = new EndpointUrl(doc.resolveJwksUri());
         validateEndpointOrigin(tokenEndpoint, "token_endpoint");
         validateEndpointOrigin(jwksUri, "jwks_uri");
 
@@ -76,7 +76,7 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
     }
 
     private OidcDiscoveryDocument resolveDocument() {
-        var json = cacheStore.get(cacheKey);
+        String json = cacheStore.get(cacheKey);
         if (json != null) {
             return deserialize(json);
         }
@@ -98,7 +98,7 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
                 return deserialize(json);
             }
 
-            var doc = fetchDiscoveryDocument();
+            OidcDiscoveryDocument doc = fetchDiscoveryDocument();
             cacheStore.put(cacheKey, serialize(doc), cacheTtl);
             cachedEndpoints = null;
             return doc;
@@ -108,16 +108,16 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
     }
 
     private OidcDiscoveryDocument fetchDiscoveryDocument() {
-        var discoveryUrl = issuerUri.resolvePath(WELL_KNOWN_PATH);
+        String discoveryUrl = issuerUri.resolvePath(WELL_KNOWN_PATH);
         log.debug("Fetching OIDC discovery from: {}", discoveryUrl);
 
         try {
-            var response = transport.fetchJson(discoveryUrl);
+            HttpTransport.TransportResponse response = transport.fetchJson(discoveryUrl);
             if (!response.isSuccessful()) {
                 throw new IdentityProviderException(
                         "OIDC discovery returned HTTP " + response.statusCode() + " from " + discoveryUrl);
             }
-            var doc = new OidcDiscoveryDocument(response.body());
+            OidcDiscoveryDocument doc = new OidcDiscoveryDocument(response.body());
             log.info("OIDC discovery loaded from: {}", discoveryUrl);
             return doc;
         } catch (IdentityProviderException e) {
@@ -128,7 +128,7 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
     }
 
     private void validateEndpointOrigin(EndpointUrl endpoint, String fieldName) {
-        var issuerHost = URI.create(issuerUri.value()).getHost();
+        String issuerHost = URI.create(issuerUri.value()).getHost();
         if (!endpoint.host().equals(issuerHost)) {
             throw new IdentityProviderException(
                     "OIDC discovery '" + fieldName + "' host '" + endpoint.host()

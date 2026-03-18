@@ -83,7 +83,7 @@ public final class NimbusJwtProcessor implements JwtProcessor {
     }
 
     private Instant requireExpiration(JWTClaimsSet claims) {
-        var exp = claims.getExpirationTime();
+        Date exp = claims.getExpirationTime();
         if (exp == null) {
             throw new IdentityProviderException(
                     "JWT missing required 'exp' claim despite passing claims verification");
@@ -120,7 +120,7 @@ public final class NimbusJwtProcessor implements JwtProcessor {
                     .retrying(true)
                     .build();
 
-            var keySelector = new JWSVerificationKeySelector<SecurityContext>(
+            JWSVerificationKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(
                     new HashSet<>(Set.of(
                             JWSAlgorithm.RS256, JWSAlgorithm.RS384, JWSAlgorithm.RS512,
                             JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512

@@ -34,7 +34,7 @@ final class OidcDiscoveryDocument {
     }
 
     private String requireString(Map<String, Object> map, String key) {
-        var val = map.get(key);
+        Object val = map.get(key);
         if (val == null) {
             throw new IdentityProviderException("OIDC discovery document missing required field: " + key);
         }

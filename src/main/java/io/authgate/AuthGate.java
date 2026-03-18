@@ -5,13 +5,13 @@ import io.authgate.application.port.HttpTransport;
 import io.authgate.cache.InMemoryCacheStore;
 import io.authgate.config.AuthGateConfiguration;
 import io.authgate.credentials.ClientCredentialsClient;
+import io.authgate.credentials.TokenEndpointClient;
 import io.authgate.discovery.OidcDiscoveryClient;
 import io.authgate.domain.model.AuthorizationChain;
 import io.authgate.domain.model.IssuerUri;
 import io.authgate.domain.model.OAuthScope;
 import io.authgate.domain.model.ServiceToken;
 import io.authgate.domain.model.ValidationOutcome;
-import io.authgate.domain.service.TokenValidationRules;
 import io.authgate.http.CircuitBreakerHttpTransport;
 import io.authgate.http.DefaultHttpTransport;
 import io.authgate.validation.NimbusJwtProcessor;
@@ -62,22 +62,23 @@ public final class AuthGate implements Closeable {
 
         this.httpTransport = httpTransport;
 
-        var transport = new CircuitBreakerHttpTransport(
+        CircuitBreakerHttpTransport transport = new CircuitBreakerHttpTransport(
                 httpTransport,
                 config.circuitBreakerFailureThreshold(),
                 config.circuitBreakerResetTimeout());
 
-        var issuerUri = new IssuerUri(config.issuerUri(), config.requireHttps());
-        var discoveryClient = new OidcDiscoveryClient(issuerUri, transport, cacheStore, config.discoveryTtl());
+        IssuerUri issuerUri = new IssuerUri(config.issuerUri(), config.requireHttps());
+        OidcDiscoveryClient discoveryClient = new OidcDiscoveryClient(issuerUri, transport, cacheStore, config.discoveryTtl());
 
-        var jwtProcessor = new NimbusJwtProcessor(discoveryClient);
-        var validationRules = new TokenValidationRules(issuerUri, config.audience(), config.clockSkewTolerance());
-        this.tokenValidator = new TokenValidator(jwtProcessor, validationRules);
+        NimbusJwtProcessor jwtProcessor = new NimbusJwtProcessor(discoveryClient);
+        this.tokenValidator = new TokenValidator(jwtProcessor, issuerUri, config.audience(), config.clockSkewTolerance());
+
+        TokenEndpointClient tokenEndpointClient = new TokenEndpointClient(discoveryClient, transport);
 
         this.clientCredentialsClient = config.clientSecret() != null
                 ? new ClientCredentialsClient(
-                        discoveryClient, transport, config.clientId(),
-                        config.clientSecret())
+                        tokenEndpointClient, config.clientId(),
+                        config.clientSecret(), config.serviceTokenCacheSize())
                 : null;
     }
 

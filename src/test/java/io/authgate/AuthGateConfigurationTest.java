@@ -14,14 +14,14 @@ class AuthGateConfigurationTest {
     @Test
     @DisplayName("Builder explicit values take highest priority")
     void explicitValuesWin() {
-        var config = new AuthGateConfiguration.Builder()
+        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
                 .issuerUri("https://custom.example.com/oidc/")
                 .clientId("my-client")
                 .clientSecret("secret")
                 .audience("my-audience")
                 .build();
 
-        var sdk = new AuthGate(config);
+        AuthGate sdk = new AuthGate(config);
         assertThat(sdk).isNotNull();
     }
 
@@ -48,7 +48,7 @@ class AuthGateConfigurationTest {
     @Test
     @DisplayName("Config exposes values through getters")
     void exposesValuesThroughGetters() {
-        var config = new AuthGateConfiguration.Builder()
+        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
                 .issuerUri("https://sso.example.com/")
                 .clientId("my-client")
                 .audience("my-audience")
@@ -62,7 +62,7 @@ class AuthGateConfigurationTest {
     @Test
     @DisplayName("Optional fields return null when not set")
     void optionalFieldsNullWhenNotSet() {
-        var config = new AuthGateConfiguration.Builder()
+        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
                 .issuerUri("https://sso.example.com/")
                 .clientId("test")
                 .build();
@@ -74,7 +74,7 @@ class AuthGateConfigurationTest {
     @Test
     @DisplayName("New config fields have sensible defaults")
     void newFieldsHaveDefaults() {
-        var config = new AuthGateConfiguration.Builder()
+        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
                 .issuerUri("https://sso.example.com/")
                 .clientId("test")
                 .build();
@@ -86,7 +86,7 @@ class AuthGateConfigurationTest {
     @Test
     @DisplayName("New config fields are customizable")
     void newFieldsAreCustomizable() {
-        var config = new AuthGateConfiguration.Builder()
+        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
                 .issuerUri("https://sso.example.com/")
                 .clientId("test")
                 .clockSkewTolerance(Duration.ofMinutes(2))

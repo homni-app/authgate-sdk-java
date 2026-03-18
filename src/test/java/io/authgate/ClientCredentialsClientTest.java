@@ -1,13 +1,13 @@
 package io.authgate;
 
-import io.authgate.application.port.HttpTransport;
 import io.authgate.credentials.ClientCredentialsClient;
+import io.authgate.credentials.TokenEndpointClient;
 import io.authgate.domain.model.OAuthScope;
+import io.authgate.domain.model.SecretValue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,18 +15,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("ClientCredentialsClient & OAuthScope — scope validation")
 class ClientCredentialsClientTest {
 
-    private final ClientCredentialsClient client = new ClientCredentialsClient(
+    private final TokenEndpointClient tokenEndpointClient = new TokenEndpointClient(
             () -> { throw new UnsupportedOperationException(); },
-            new HttpTransport() {
-                @Override public TransportResponse postForm(String endpoint, Map<String, String> params) {
+            new io.authgate.application.port.HttpTransport() {
+                @Override public TransportResponse postForm(String endpoint, java.util.Map<String, String> params) {
                     throw new UnsupportedOperationException();
                 }
                 @Override public TransportResponse fetchJson(String endpoint) {
                     throw new UnsupportedOperationException();
                 }
-            },
+            });
+
+    private final ClientCredentialsClient client = new ClientCredentialsClient(
+            tokenEndpointClient,
             "test-client",
-            "test-secret"
+            new SecretValue("test-secret"),
+            64
     );
 
     @Nested
@@ -70,7 +74,7 @@ class ClientCredentialsClientTest {
 
         @Test
         void acceptsValidScope() {
-            var scope = new OAuthScope("user:read");
+            OAuthScope scope = new OAuthScope("user:read");
             org.assertj.core.api.Assertions.assertThat(scope.value()).isEqualTo("user:read");
         }
     }

@@ -45,12 +45,12 @@ public final class DefaultHttpTransport implements HttpTransport, Closeable {
 
     @Override
     public TransportResponse postForm(String endpoint, Map<String, String> params) {
-        var body = params.entrySet().stream()
+        String body = params.entrySet().stream()
                 .filter(e -> e.getValue() != null)
                 .map(e -> encode(e.getKey()) + "=" + encode(e.getValue()))
                 .collect(Collectors.joining("&"));
 
-        var request = HttpRequest.newBuilder()
+        HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .timeout(requestTimeout)
                 .header("Content-Type", "application/x-www-form-urlencoded")
@@ -63,7 +63,7 @@ public final class DefaultHttpTransport implements HttpTransport, Closeable {
 
     @Override
     public TransportResponse fetchJson(String endpoint) {
-        var request = HttpRequest.newBuilder()
+        HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .timeout(requestTimeout)
                 .header("Accept", JSON_CONTENT_TYPE)
@@ -80,8 +80,8 @@ public final class DefaultHttpTransport implements HttpTransport, Closeable {
 
     private TransportResponse execute(HttpRequest request) {
         try {
-            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
-            var contentType = response.headers().firstValue("Content-Type").orElse("");
+            HttpResponse<java.io.InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            String contentType = response.headers().firstValue("Content-Type").orElse("");
 
             if (!contentType.contains("json")) {
                 throw new IdentityProviderException(
@@ -91,7 +91,7 @@ public final class DefaultHttpTransport implements HttpTransport, Closeable {
             }
 
             String bodyString;
-            try (var inputStream = response.body()) {
+            try (java.io.InputStream inputStream = response.body()) {
                 byte[] bytes = inputStream.readNBytes(MAX_RESPONSE_BODY_BYTES + 1);
                 if (bytes.length > MAX_RESPONSE_BODY_BYTES) {
                     throw new IdentityProviderException(

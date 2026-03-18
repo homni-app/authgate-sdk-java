@@ -1,9 +1,7 @@
 package io.authgate.credentials;
 
-import io.authgate.application.port.EndpointDiscovery;
-import io.authgate.application.port.HttpTransport;
-import io.authgate.domain.exception.IdentityProviderException;
 import io.authgate.domain.model.OAuthScope;
+import io.authgate.domain.model.SecretValue;
 import io.authgate.domain.model.ServiceToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,27 +19,26 @@ import java.util.stream.Collectors;
 public final class ClientCredentialsClient {
 
     private static final Logger log = LoggerFactory.getLogger(ClientCredentialsClient.class);
-    private static final int MAX_CACHE_SIZE = 64;
 
-    private final EndpointDiscovery endpointDiscovery;
-    private final HttpTransport transport;
+    private final TokenEndpointClient tokenEndpointClient;
     private final String clientId;
-    private final String clientSecret;
+    private final SecretValue clientSecret;
+    private final int maxCacheSize;
     private final ConcurrentHashMap<String, ServiceToken> tokenCache = new ConcurrentHashMap<>();
 
     public ClientCredentialsClient(
-            EndpointDiscovery endpointDiscovery,
-            HttpTransport transport,
+            TokenEndpointClient tokenEndpointClient,
             String clientId,
-            String clientSecret
+            SecretValue clientSecret,
+            int maxCacheSize
     ) {
-        this.endpointDiscovery = Objects.requireNonNull(endpointDiscovery);
-        this.transport = Objects.requireNonNull(transport);
+        this.tokenEndpointClient = Objects.requireNonNull(tokenEndpointClient);
         this.clientId = Objects.requireNonNull(clientId);
-        if (clientSecret == null || clientSecret.isBlank()) {
-            throw new IllegalArgumentException("client_credentials grant requires a client secret");
+        this.clientSecret = Objects.requireNonNull(clientSecret, "client_credentials grant requires a client secret");
+        if (maxCacheSize <= 0) {
+            throw new IllegalArgumentException("maxCacheSize must be positive");
         }
-        this.clientSecret = clientSecret;
+        this.maxCacheSize = maxCacheSize;
     }
 
     /**
@@ -54,7 +51,7 @@ public final class ClientCredentialsClient {
             throw new IllegalArgumentException("scopes must not be empty");
         }
 
-        var scopeKey = scopes.stream()
+        String scopeKey = scopes.stream()
                 .map(OAuthScope::value)
                 .sorted()
                 .collect(Collectors.joining(" "));
@@ -64,11 +61,11 @@ public final class ClientCredentialsClient {
                 return cached;
             }
             evictExpiredEntries();
-            if (tokenCache.size() >= MAX_CACHE_SIZE) {
-                log.warn("Service token cache at capacity ({}), evicting oldest entry", MAX_CACHE_SIZE);
+            if (tokenCache.size() >= maxCacheSize) {
+                log.warn("Service token cache at capacity ({}), evicting oldest entry", maxCacheSize);
                 evictOldest();
             }
-            var token = fetchToken(scopes);
+            ServiceToken token = fetchToken(scopes);
             log.info("Service token acquired for scopes: {}", key);
             return token;
         });
@@ -86,31 +83,14 @@ public final class ClientCredentialsClient {
     }
 
     private ServiceToken fetchToken(Set<OAuthScope> scopes) {
-        var tokenEndpoint = endpointDiscovery.discover().tokenEndpoint().value();
-
-        var params = new LinkedHashMap<String, String>();
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
         params.put("grant_type", "client_credentials");
         params.put("client_id", clientId);
-        params.put("client_secret", clientSecret);
+        params.put("client_secret", clientSecret.asString());
         params.put("scope", scopes.stream()
                 .map(OAuthScope::value)
                 .collect(Collectors.joining(" ")));
 
-        var response = transport.postForm(tokenEndpoint, params);
-
-        if (!response.isSuccessful()) {
-            throw new IdentityProviderException(
-                    "client_credentials grant failed with HTTP " + response.statusCode());
-        }
-
-        var body = response.body();
-        var error = body.get("error");
-        if (error != null) {
-            throw new IdentityProviderException(
-                    "client_credentials grant failed: " + error + " — "
-                            + body.getOrDefault("error_description", ""));
-        }
-
-        return ServiceTokenMapper.fromTokenResponse(body);
+        return tokenEndpointClient.requestToken("client_credentials", params);
     }
 }

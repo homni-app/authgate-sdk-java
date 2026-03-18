@@ -3,16 +3,18 @@ package io.authgate.validation;
 import io.authgate.application.port.JwtProcessor;
 import io.authgate.application.port.JwtProcessor.JwtProcessingResult;
 import io.authgate.application.port.JwtProcessor.ParsedClaims;
+import io.authgate.domain.model.IssuerUri;
 import io.authgate.domain.model.RejectionReason;
 import io.authgate.domain.model.ValidatedToken;
 import io.authgate.domain.model.ValidationOutcome;
-import io.authgate.domain.service.TokenValidationRules;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Objects;
 
 /**
  * Orchestrates JWT validation: delegates cryptographic verification to {@link JwtProcessor}
- * and applies domain rules via {@link TokenValidationRules}.
+ * and applies domain rules via {@link ValidatedToken#validateAgainst}.
  *
  * <p>This class contains no infrastructure dependencies — all library-specific
  * logic lives behind the {@link JwtProcessor} port.</p>
@@ -20,11 +22,17 @@ import java.util.Objects;
 public final class TokenValidator {
 
     private final JwtProcessor jwtProcessor;
-    private final TokenValidationRules validationRules;
+    private final IssuerUri expectedIssuer;
+    private final String expectedAudience;
+    private final Clock clock;
 
-    public TokenValidator(JwtProcessor jwtProcessor, TokenValidationRules validationRules) {
+    public TokenValidator(JwtProcessor jwtProcessor, IssuerUri expectedIssuer,
+                          String expectedAudience, Duration clockSkewTolerance) {
         this.jwtProcessor = Objects.requireNonNull(jwtProcessor);
-        this.validationRules = Objects.requireNonNull(validationRules);
+        this.expectedIssuer = Objects.requireNonNull(expectedIssuer);
+        this.expectedAudience = expectedAudience;
+        this.clock = Clock.offset(Clock.systemUTC(),
+                Objects.requireNonNullElse(clockSkewTolerance, Duration.ZERO).negated());
     }
 
     /**
@@ -35,8 +43,8 @@ public final class TokenValidator {
 
         return switch (jwtProcessor.process(rawJwt)) {
             case JwtProcessingResult.Success s -> {
-                var token = mapToValidatedToken(s.claims());
-                yield validationRules.validate(token);
+                ValidatedToken token = mapToValidatedToken(s.claims());
+                yield token.validateAgainst(expectedIssuer, expectedAudience, clock);
             }
             case JwtProcessingResult.SignatureInvalid e ->
                     new ValidationOutcome.Rejected(RejectionReason.INVALID_SIGNATURE);
@@ -54,7 +62,7 @@ public final class TokenValidator {
         if (authorizationHeader == null || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
             return new ValidationOutcome.Rejected(RejectionReason.MALFORMED_TOKEN);
         }
-        var rawJwt = authorizationHeader.substring(7).trim();
+        String rawJwt = authorizationHeader.substring(7).trim();
         return validate(rawJwt);
     }
 

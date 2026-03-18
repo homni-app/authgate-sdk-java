@@ -1,5 +1,7 @@
 package io.authgate.config;
 
+import io.authgate.domain.model.SecretValue;
+
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
@@ -48,7 +50,7 @@ public final class AuthGateConfiguration {
 
     private final String issuerUri;
     private final String clientId;
-    private final String clientSecret;
+    private final SecretValue clientSecret;
     private final String audience;
     private final Duration httpTimeout;
     private final Duration discoveryTtl;
@@ -56,6 +58,7 @@ public final class AuthGateConfiguration {
     private final boolean requireHttps;
     private final int circuitBreakerFailureThreshold;
     private final Duration circuitBreakerResetTimeout;
+    private final int serviceTokenCacheSize;
 
     private AuthGateConfiguration(Builder builder) {
         Objects.requireNonNull(builder.issuerUri, "issuerUri must not be null");
@@ -80,10 +83,9 @@ public final class AuthGateConfiguration {
         }
         this.clientId = builder.clientId;
 
-        if (builder.clientSecret != null && builder.clientSecret.isBlank()) {
-            throw new IllegalArgumentException("clientSecret must not be blank");
-        }
-        this.clientSecret = builder.clientSecret;
+        this.clientSecret = builder.clientSecret != null
+                ? new SecretValue(builder.clientSecret)
+                : null;
 
         if (builder.audience != null && builder.audience.isBlank()) {
             throw new IllegalArgumentException("audience must not be blank");
@@ -117,6 +119,11 @@ public final class AuthGateConfiguration {
         if (this.circuitBreakerResetTimeout.isNegative() || this.circuitBreakerResetTimeout.isZero()) {
             throw new IllegalArgumentException("circuitBreakerResetTimeout must be positive");
         }
+
+        this.serviceTokenCacheSize = builder.serviceTokenCacheSize;
+        if (this.serviceTokenCacheSize <= 0) {
+            throw new IllegalArgumentException("serviceTokenCacheSize must be positive");
+        }
     }
 
     /** OIDC provider base URL. Never {@code null}. */
@@ -126,7 +133,7 @@ public final class AuthGateConfiguration {
     public String clientId()            { return clientId; }
 
     /** OAuth 2.1 client secret. {@code null} if not configured. */
-    public String clientSecret()        { return clientSecret; }
+    public SecretValue clientSecret()   { return clientSecret; }
 
     /** Expected {@code aud} claim. {@code null} if audience check is disabled. */
     public String audience()            { return audience; }
@@ -149,6 +156,9 @@ public final class AuthGateConfiguration {
     /** Duration the circuit stays open before allowing a probe call. Never {@code null}. */
     public Duration circuitBreakerResetTimeout() { return circuitBreakerResetTimeout; }
 
+    /** Maximum number of cached service tokens (per scope-set). Always positive. */
+    public int serviceTokenCacheSize() { return serviceTokenCacheSize; }
+
     public static final class Builder {
         private String issuerUri;
         private String clientId;
@@ -160,6 +170,7 @@ public final class AuthGateConfiguration {
         private boolean requireHttps = true;
         private int circuitBreakerFailureThreshold = 5;
         private Duration circuitBreakerResetTimeout;
+        private int serviceTokenCacheSize = 64;
 
         public Builder() {}
 
@@ -173,6 +184,7 @@ public final class AuthGateConfiguration {
         public Builder requireHttps(boolean v)            { this.requireHttps = v; return this; }
         public Builder circuitBreakerFailureThreshold(int v)   { this.circuitBreakerFailureThreshold = v; return this; }
         public Builder circuitBreakerResetTimeout(Duration v)  { this.circuitBreakerResetTimeout = v; return this; }
+        public Builder serviceTokenCacheSize(int v)              { this.serviceTokenCacheSize = v; return this; }
 
         public AuthGateConfiguration build() {
             return new AuthGateConfiguration(this);

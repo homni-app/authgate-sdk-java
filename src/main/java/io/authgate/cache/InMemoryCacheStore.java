@@ -20,7 +20,7 @@ public final class InMemoryCacheStore implements CacheStore {
 
     @Override
     public String get(String key) {
-        var entry = store.get(key);
+        Entry entry = store.get(key);
         if (entry == null) {
             return null;
         }

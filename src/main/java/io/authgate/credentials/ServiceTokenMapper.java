@@ -19,7 +19,7 @@ final class ServiceTokenMapper {
      * @throws IdentityProviderException if {@code access_token} is missing or not a string
      */
     static ServiceToken fromTokenResponse(Map<String, Object> body) {
-        var accessToken = body.get("access_token");
+        Object accessToken = body.get("access_token");
         if (accessToken == null) {
             throw new IdentityProviderException("Missing 'access_token' in token response");
         }

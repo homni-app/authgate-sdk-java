@@ -30,7 +30,7 @@ public final class IssuerUri {
      */
     public boolean matches(String issuer) {
         if (issuer == null) return false;
-        var other = issuer.endsWith("/") ? issuer : issuer + "/";
+        String other = issuer.endsWith("/") ? issuer : issuer + "/";
         return normalized.equals(other);
     }
 
