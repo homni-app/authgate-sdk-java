@@ -33,7 +33,7 @@ import java.util.Objects;
  *       token expiration ({@code exp}) and not-before ({@code nbf}) claims.
  *       Default: {@code 30s}.</li>
  *   <li>{@code requireHttps} — when {@code true}, rejects issuer URIs that
- *       are not HTTPS. Disable for local development only. Default: {@code false}.</li>
+ *       are not HTTPS. Disable for local development only. Default: {@code true}.</li>
  * </ul>
  *
  * <h2>Minimal example:</h2>
@@ -157,7 +157,7 @@ public final class AuthGateConfiguration {
         private Duration httpTimeout;
         private Duration discoveryTtl;
         private Duration clockSkewTolerance;
-        private boolean requireHttps;
+        private boolean requireHttps = true;
         private int circuitBreakerFailureThreshold = 5;
         private Duration circuitBreakerResetTimeout;
 

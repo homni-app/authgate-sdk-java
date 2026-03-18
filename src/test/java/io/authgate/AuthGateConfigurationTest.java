@@ -80,7 +80,7 @@ class AuthGateConfigurationTest {
                 .build();
 
         assertThat(config.clockSkewTolerance()).isEqualTo(Duration.ofSeconds(30));
-        assertThat(config.requireHttps()).isFalse();
+        assertThat(config.requireHttps()).isTrue();
     }
 
     @Test
@@ -90,10 +90,10 @@ class AuthGateConfigurationTest {
                 .issuerUri("https://sso.example.com/")
                 .clientId("test")
                 .clockSkewTolerance(Duration.ofMinutes(2))
-                .requireHttps(true)
+                .requireHttps(false)
                 .build();
 
         assertThat(config.clockSkewTolerance()).isEqualTo(Duration.ofMinutes(2));
-        assertThat(config.requireHttps()).isTrue();
+        assertThat(config.requireHttps()).isFalse();
     }
 }
