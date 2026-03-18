@@ -49,7 +49,7 @@ public final class AuthorizationChain {
     public ValidatedToken orThrow() {
         return switch (evaluate()) {
             case AuthorizationResult.Granted g -> g.token();
-            case AuthorizationResult.Denied d -> throw new AccessDeniedException(d.reason());
+            case AuthorizationResult.Denied d -> throw new AccessDeniedException(d.reason().description());
             case AuthorizationResult.Rejected r -> throw new TokenValidationException(r.reason());
         };
     }
@@ -57,14 +57,14 @@ public final class AuthorizationChain {
     private AuthorizationResult checkPermissions(ValidatedToken token) {
         for (String scope : requiredScopes) {
             if (!token.hasScope(scope)) {
-                return new AuthorizationResult.Denied("Missing required scope: " + scope);
+                return new AuthorizationResult.Denied(new DenialReason.MissingScope(scope));
             }
         }
         if (requiredAudience != null && !token.isIntendedFor(requiredAudience)) {
-            return new AuthorizationResult.Denied("Token not intended for audience: " + requiredAudience);
+            return new AuthorizationResult.Denied(new DenialReason.AudienceMismatch(requiredAudience));
         }
         if (requiredSubject != null && !token.belongsTo(requiredSubject)) {
-            return new AuthorizationResult.Denied("Token does not belong to subject: " + requiredSubject);
+            return new AuthorizationResult.Denied(new DenialReason.SubjectMismatch(requiredSubject));
         }
         return new AuthorizationResult.Granted(token);
     }

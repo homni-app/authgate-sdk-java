@@ -115,7 +115,10 @@ class DomainModelTest {
             var result = token.require().scope("nonexistent").evaluate();
             assertThat(result).isInstanceOf(AuthorizationResult.Denied.class);
             switch (result) {
-                case AuthorizationResult.Denied d -> assertThat(d.reason()).contains("nonexistent");
+                case AuthorizationResult.Denied d -> {
+                    assertThat(d.reason()).isInstanceOf(DenialReason.MissingScope.class);
+                    assertThat(d.reason().description()).contains("nonexistent");
+                }
                 default -> fail("Expected Denied");
             }
         }
@@ -230,7 +233,10 @@ class DomainModelTest {
         void deniedExposesReason() {
             var result = new AuthorizationChain(validOutcome()).subject("wrong").evaluate();
             switch (result) {
-                case AuthorizationResult.Denied d -> assertThat(d.reason()).contains("wrong");
+                case AuthorizationResult.Denied d -> {
+                    assertThat(d.reason()).isInstanceOf(DenialReason.SubjectMismatch.class);
+                    assertThat(d.reason().description()).contains("wrong");
+                }
                 default -> fail("Expected Denied");
             }
         }
