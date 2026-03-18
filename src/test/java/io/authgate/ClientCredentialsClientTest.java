@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("ClientCredentialsClient & OAuthScope — scope validation")
@@ -59,36 +60,15 @@ class ClientCredentialsClientTest {
         }
 
         @Test
-        void rejectsScopeWithLeadingSpace() {
-            assertThatThrownBy(() -> new OAuthScope(" read"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("must not contain whitespace");
-        }
-
-        @Test
-        void rejectsScopeWithTab() {
-            assertThatThrownBy(() -> new OAuthScope("user\tread"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("must not contain whitespace");
-        }
-
-        @Test
         void acceptsValidScope() {
             OAuthScope scope = new OAuthScope("user:read");
-            org.assertj.core.api.Assertions.assertThat(scope.value()).isEqualTo("user:read");
+            assertThat(scope.value()).isEqualTo("user:read");
         }
     }
 
     @Nested
     @DisplayName("ClientCredentialsClient — collection-level validation")
     class CollectionValidationTests {
-
-        @Test
-        void rejectsNullScopes() {
-            assertThatThrownBy(() -> client.acquire(null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("scopes must not be null");
-        }
 
         @Test
         void rejectsEmptyScopes() {

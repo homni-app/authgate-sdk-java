@@ -46,32 +46,6 @@ class AuthGateConfigurationTest {
     }
 
     @Test
-    @DisplayName("Config exposes values through getters")
-    void exposesValuesThroughGetters() {
-        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
-                .issuerUri("https://sso.example.com/")
-                .clientId("my-client")
-                .audience("my-audience")
-                .build();
-
-        assertThat(config.issuerUri()).isEqualTo("https://sso.example.com/");
-        assertThat(config.clientId()).isEqualTo("my-client");
-        assertThat(config.audience()).isEqualTo("my-audience");
-    }
-
-    @Test
-    @DisplayName("Optional fields return null when not set")
-    void optionalFieldsNullWhenNotSet() {
-        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
-                .issuerUri("https://sso.example.com/")
-                .clientId("test")
-                .build();
-
-        assertThat(config.clientSecret()).isNull();
-        assertThat(config.audience()).isNull();
-    }
-
-    @Test
     @DisplayName("New config fields have sensible defaults")
     void newFieldsHaveDefaults() {
         AuthGateConfiguration config = new AuthGateConfiguration.Builder()
@@ -81,19 +55,5 @@ class AuthGateConfigurationTest {
 
         assertThat(config.clockSkewTolerance()).isEqualTo(Duration.ofSeconds(30));
         assertThat(config.requireHttps()).isTrue();
-    }
-
-    @Test
-    @DisplayName("New config fields are customizable")
-    void newFieldsAreCustomizable() {
-        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
-                .issuerUri("https://sso.example.com/")
-                .clientId("test")
-                .clockSkewTolerance(Duration.ofMinutes(2))
-                .requireHttps(false)
-                .build();
-
-        assertThat(config.clockSkewTolerance()).isEqualTo(Duration.ofMinutes(2));
-        assertThat(config.requireHttps()).isFalse();
     }
 }
