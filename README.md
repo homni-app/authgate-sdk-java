@@ -2,7 +2,7 @@
 
 # AuthGate SDK
 
-<img src="assets/authgate-logo.jpeg" width="400" alt="AuthGate Logo">
+<img src="assets/authgate-logo.jpeg" width="600" alt="AuthGate Logo">
 
 **Provider-agnostic OIDC library for Java 21+**
 
