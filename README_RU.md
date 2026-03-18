@@ -143,6 +143,7 @@ var sdk = AuthGate.builder(config)
 | 🔲 | Отказ от геттеров в пользу модификаторов доступа | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
 | 🔲 | Оптимизация артефакта — снижение размера SDK | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
 | 🔲 | Публикация в Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
+| 🔲 | Поддержка Gradle | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
 
 ## Contributing
 
