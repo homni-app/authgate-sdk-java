@@ -35,9 +35,19 @@ public final class ValidatedToken {
     // ── Accessors ────────────────────────────────────────────────
 
     /** The token subject ({@code sub} claim) — identifies the user or service. */
-    public String subject() {
-        return subject;
-    }
+    public String subject() { return subject; }
+
+    /** The token issuer ({@code iss} claim). */
+    public String issuer() { return issuer; }
+
+    /** Granted scopes ({@code scope} claim). Unmodifiable. */
+    public Set<String> scopes() { return scopes; }
+
+    /** Token audiences ({@code aud} claim). Unmodifiable. */
+    public Set<String> audiences() { return audiences; }
+
+    /** Token expiration time ({@code exp} claim). */
+    public Instant expiration() { return expiration; }
 
     // ── Authorization Decisions ──────────────────────────────────
 
