@@ -13,6 +13,7 @@ import io.authgate.domain.model.ValidatedToken;
 import io.authgate.domain.model.ValidationOutcome;
 import io.authgate.domain.service.TokenValidationRules;
 import io.authgate.http.DefaultHttpTransport;
+import io.authgate.validation.NimbusJwtProcessor;
 import io.authgate.validation.TokenValidator;
 
 import java.util.Objects;
@@ -58,8 +59,9 @@ public final class AuthGate {
         var issuerUri = new IssuerUri(config.issuerUri(), config.requireHttps());
         var discoveryClient = new OidcDiscoveryClient(issuerUri, httpTransport, cacheStore, config.discoveryTtl());
 
+        var jwtProcessor = new NimbusJwtProcessor(discoveryClient);
         var validationRules = new TokenValidationRules(issuerUri, config.audience(), config.clockSkewTolerance());
-        this.tokenValidator = new TokenValidator(discoveryClient, validationRules);
+        this.tokenValidator = new TokenValidator(jwtProcessor, validationRules);
 
         this.clientCredentialsClient = config.clientSecret() != null
                 ? new ClientCredentialsClient(

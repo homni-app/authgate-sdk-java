@@ -1,44 +1,29 @@
 package io.authgate.validation;
 
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
-import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
-import com.nimbusds.jose.proc.JWSVerificationKeySelector;
-import com.nimbusds.jose.proc.SecurityContext;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
-import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
-import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import io.authgate.application.port.EndpointDiscovery;
-import io.authgate.domain.exception.IdentityProviderException;
-import io.authgate.domain.model.*;
+import io.authgate.application.port.JwtProcessor;
+import io.authgate.application.port.JwtProcessor.JwtProcessingResult;
+import io.authgate.application.port.JwtProcessor.ParsedClaims;
+import io.authgate.domain.model.RejectionReason;
+import io.authgate.domain.model.ValidatedToken;
+import io.authgate.domain.model.ValidationOutcome;
 import io.authgate.domain.service.TokenValidationRules;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URL;
-import java.text.ParseException;
-import java.util.*;
+import java.util.Objects;
 
 /**
- * Validates bearer tokens locally using the IdP's JWKS endpoint.
- * JWKS keys are cached and refreshed automatically by Nimbus.
+ * Orchestrates JWT validation: delegates cryptographic verification to {@link JwtProcessor}
+ * and applies domain rules via {@link TokenValidationRules}.
  *
- * <p>The JWT processor is initialized once on first use and reused.
- * Nimbus handles JWKS key rotation automatically via {@code retrying(true)}.</p>
+ * <p>This class contains no infrastructure dependencies — all library-specific
+ * logic lives behind the {@link JwtProcessor} port.</p>
  */
 public final class TokenValidator {
 
-    private static final Logger log = LoggerFactory.getLogger(TokenValidator.class);
-
-    private final EndpointDiscovery endpointDiscovery;
+    private final JwtProcessor jwtProcessor;
     private final TokenValidationRules validationRules;
-    private volatile ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
 
-    public TokenValidator(EndpointDiscovery endpointDiscovery, TokenValidationRules validationRules) {
-        this.endpointDiscovery = Objects.requireNonNull(endpointDiscovery);
+    public TokenValidator(JwtProcessor jwtProcessor, TokenValidationRules validationRules) {
+        this.jwtProcessor = Objects.requireNonNull(jwtProcessor);
         this.validationRules = Objects.requireNonNull(validationRules);
     }
 
@@ -48,28 +33,22 @@ public final class TokenValidator {
     public ValidationOutcome validate(String rawJwt) {
         Objects.requireNonNull(rawJwt, "rawJwt must not be null");
 
-        ensureProcessorInitialized();
-
-        JWTClaimsSet claims;
-        try {
-            claims = jwtProcessor.process(rawJwt, null);
-        } catch (com.nimbusds.jose.proc.BadJOSEException e) {
-            log.debug("JWT signature/structure validation failed: {}", e.getMessage());
-            return new ValidationOutcome.Rejected(RejectionReason.INVALID_SIGNATURE);
-        } catch (ParseException e) {
-            log.debug("JWT parse error: {}", e.getMessage());
-            return new ValidationOutcome.Rejected(RejectionReason.MALFORMED_TOKEN);
-        } catch (com.nimbusds.jose.JOSEException e) {
-            log.error("Unexpected JOSE error during JWT processing", e);
-            return new ValidationOutcome.Rejected(RejectionReason.UNKNOWN);
-        }
-
-        var token = mapToValidatedToken(claims);
-        return validationRules.validate(token);
+        return switch (jwtProcessor.process(rawJwt)) {
+            case JwtProcessingResult.Success s -> {
+                var token = mapToValidatedToken(s.claims());
+                yield validationRules.validate(token);
+            }
+            case JwtProcessingResult.SignatureInvalid e ->
+                    new ValidationOutcome.Rejected(RejectionReason.INVALID_SIGNATURE);
+            case JwtProcessingResult.Malformed e ->
+                    new ValidationOutcome.Rejected(RejectionReason.MALFORMED_TOKEN);
+            case JwtProcessingResult.ProcessingError e ->
+                    new ValidationOutcome.Rejected(RejectionReason.UNKNOWN);
+        };
     }
 
     /**
-     * Validates from an Authorization header ("Bearer xxx").
+     * Validates from an Authorization header ({@code "Bearer xxx"}).
      */
     public ValidationOutcome validateFromHeader(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
@@ -79,83 +58,13 @@ public final class TokenValidator {
         return validate(rawJwt);
     }
 
-    // ── Internal ─────────────────────────────────────────────────
-
-    private ValidatedToken mapToValidatedToken(JWTClaimsSet claims) {
-        var builder = new ValidatedToken.Builder()
-                .subject(claims.getSubject())
-                .issuer(claims.getIssuer())
-                .expiration(claims.getExpirationTime().toInstant())
-                .scopes(extractScopes(claims))
-                .audiences(claims.getAudience() != null ? new HashSet<>(claims.getAudience()) : Set.of());
-
-        return builder.build();
-    }
-
-    private void ensureProcessorInitialized() {
-        if (jwtProcessor == null) {
-            synchronized (this) {
-                if (jwtProcessor == null) {
-                    initializeProcessor(endpointDiscovery.discover().jwksUri());
-                }
-            }
-        }
-    }
-
-    private void initializeProcessor(String jwksUri) {
-        try {
-            JWKSource<SecurityContext> jwkSource = JWKSourceBuilder
-                    .create(new URL(jwksUri))
-                    .retrying(true)
-                    .build();
-
-            var keySelector = new JWSVerificationKeySelector<SecurityContext>(
-                    new HashSet<>(Set.of(
-                            JWSAlgorithm.RS256, JWSAlgorithm.RS384, JWSAlgorithm.RS512,
-                            JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512
-                    )),
-                    jwkSource
-            );
-
-            ConfigurableJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
-            processor.setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(
-                    com.nimbusds.jose.JOSEObjectType.JWT,
-                    new com.nimbusds.jose.JOSEObjectType("at+jwt"),
-                    null
-            ));
-            processor.setJWSKeySelector(keySelector);
-            processor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<>(
-                    new JWTClaimsSet.Builder().build(),
-                    new HashSet<>(Set.of("sub", "iss", "exp"))
-            ));
-
-            this.jwtProcessor = processor;
-            log.info("JWT processor initialized with JWKS from: {}", jwksUri);
-        } catch (IOException e) {
-            throw new IdentityProviderException("Failed to initialize JWKS processor from " + jwksUri, e);
-        }
-    }
-
-    private Set<String> extractScopes(JWTClaimsSet claims) {
-        var scope = extractStringClaim(claims, "scope");
-        if (scope != null && !scope.isBlank()) {
-            return new HashSet<>(Arrays.asList(scope.split("\\s+")));
-        }
-        try {
-            var list = claims.getStringListClaim("scope");
-            if (list != null) return new HashSet<>(list);
-        } catch (ParseException e) {
-            log.trace("Scope claim is not a string list, skipping list extraction", e);
-        }
-        return Set.of();
-    }
-
-    private String extractStringClaim(JWTClaimsSet claims, String name) {
-        try {
-            return claims.getStringClaim(name);
-        } catch (ParseException e) {
-            log.trace("Failed to extract claim '{}' as string", name, e);
-            return null;
-        }
+    private ValidatedToken mapToValidatedToken(ParsedClaims claims) {
+        return new ValidatedToken.Builder()
+                .subject(claims.subject())
+                .issuer(claims.issuer())
+                .expiration(claims.expiration())
+                .scopes(claims.scopes())
+                .audiences(claims.audiences())
+                .build();
     }
 }
