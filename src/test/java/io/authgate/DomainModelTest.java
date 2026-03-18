@@ -24,7 +24,7 @@ class DomainModelTest {
             return new ValidatedToken.Builder()
                     .subject("user-123")
                     .issuer("https://sso.example.com/")
-                    .scopes(Set.of("openid", "profile", "admin"))
+                    .scopes(Set.of(new OAuthScope("openid"), new OAuthScope("profile"), new OAuthScope("admin")))
                     .audiences(Set.of("my-service"))
                     .expiration(expiry)
                     .build();
@@ -36,8 +36,8 @@ class DomainModelTest {
 
             assertThat(token.belongsTo("user-123")).isTrue();
             assertThat(token.belongsTo("other")).isFalse();
-            assertThat(token.hasScope("admin")).isTrue();
-            assertThat(token.hasScope("delete")).isFalse();
+            assertThat(token.hasScope(new OAuthScope("admin"))).isTrue();
+            assertThat(token.hasScope(new OAuthScope("delete"))).isFalse();
             assertThat(token.isIntendedFor("my-service")).isTrue();
             assertThat(token.isIntendedFor("other-service")).isFalse();
             assertThat(token.hasExpired()).isFalse();
@@ -78,20 +78,20 @@ class DomainModelTest {
         @Test
         void requireGrantedWhenScopePresent() {
             var token = createToken(Instant.now().plusSeconds(3600));
-            assertThat(token.require().scope("admin").evaluate()).isInstanceOf(AuthorizationResult.Granted.class);
+            assertThat(token.require().scope(new OAuthScope("admin")).evaluate()).isInstanceOf(AuthorizationResult.Granted.class);
         }
 
         @Test
         void requireDeniedWhenScopeMissing() {
             var token = createToken(Instant.now().plusSeconds(3600));
-            assertThat(token.require().scope("nonexistent").evaluate()).isInstanceOf(AuthorizationResult.Denied.class);
+            assertThat(token.require().scope(new OAuthScope("nonexistent")).evaluate()).isInstanceOf(AuthorizationResult.Denied.class);
         }
 
         @Test
         void requireGrantedWithAllConstraints() {
             var token = createToken(Instant.now().plusSeconds(3600));
             assertThat(token.require()
-                    .scope("admin")
+                    .scope(new OAuthScope("admin"))
                     .audience("my-service")
                     .subject("user-123")
                     .evaluate()).isInstanceOf(AuthorizationResult.Granted.class);
@@ -112,7 +112,7 @@ class DomainModelTest {
         @Test
         void denialReasonPresentWhenDenied() {
             var token = createToken(Instant.now().plusSeconds(3600));
-            var result = token.require().scope("nonexistent").evaluate();
+            var result = token.require().scope(new OAuthScope("nonexistent")).evaluate();
             assertThat(result).isInstanceOf(AuthorizationResult.Denied.class);
             switch (result) {
                 case AuthorizationResult.Denied d -> {
@@ -126,7 +126,7 @@ class DomainModelTest {
         @Test
         void denialReasonAbsentWhenGranted() {
             var token = createToken(Instant.now().plusSeconds(3600));
-            assertThat(token.require().scope("admin").evaluate()).isInstanceOf(AuthorizationResult.Granted.class);
+            assertThat(token.require().scope(new OAuthScope("admin")).evaluate()).isInstanceOf(AuthorizationResult.Granted.class);
         }
 
         @Test
@@ -138,14 +138,14 @@ class DomainModelTest {
         @Test
         void orThrowReturnsTokenWhenGranted() {
             var token = createToken(Instant.now().plusSeconds(3600));
-            var result = token.require().scope("admin").subject("user-123").orThrow();
+            var result = token.require().scope(new OAuthScope("admin")).subject("user-123").orThrow();
             assertThat(result).isSameAs(token);
         }
 
         @Test
         void orThrowThrowsWhenDenied() {
             var token = createToken(Instant.now().plusSeconds(3600));
-            assertThatThrownBy(() -> token.require().scope("nonexistent").orThrow())
+            assertThatThrownBy(() -> token.require().scope(new OAuthScope("nonexistent")).orThrow())
                     .isInstanceOf(io.authgate.domain.exception.AccessDeniedException.class)
                     .hasMessageContaining("nonexistent");
         }
@@ -167,7 +167,7 @@ class DomainModelTest {
             return new ValidatedToken.Builder()
                     .subject("user-123")
                     .issuer("https://sso.example.com/")
-                    .scopes(Set.of("openid", "admin"))
+                    .scopes(Set.of(new OAuthScope("openid"), new OAuthScope("admin")))
                     .audiences(Set.of("my-service"))
                     .expiration(Instant.now().plusSeconds(3600))
                     .build();
@@ -184,21 +184,21 @@ class DomainModelTest {
         @Test
         void evaluateGrantedWhenAllMatch() {
             var result = new AuthorizationChain(validOutcome())
-                    .scope("admin").audience("my-service").subject("user-123").evaluate();
+                    .scope(new OAuthScope("admin")).audience("my-service").subject("user-123").evaluate();
             assertThat(result).isInstanceOf(AuthorizationResult.Granted.class);
         }
 
         @Test
         void evaluateDeniedOnMissingScope() {
             var result = new AuthorizationChain(validOutcome())
-                    .scope("nonexistent").evaluate();
+                    .scope(new OAuthScope("nonexistent")).evaluate();
             assertThat(result).isInstanceOf(AuthorizationResult.Denied.class);
         }
 
         @Test
         void evaluateRejectedOnInvalidToken() {
             var result = new AuthorizationChain(rejectedOutcome())
-                    .scope("admin").evaluate();
+                    .scope(new OAuthScope("admin")).evaluate();
             assertThat(result).isInstanceOf(AuthorizationResult.Rejected.class);
         }
 
@@ -212,13 +212,13 @@ class DomainModelTest {
         void orThrowReturnsTokenWhenGranted() {
             var token = validToken();
             var result = new AuthorizationChain(new ValidationOutcome.Valid(token))
-                    .scope("admin").orThrow();
+                    .scope(new OAuthScope("admin")).orThrow();
             assertThat(result).isSameAs(token);
         }
 
         @Test
         void orThrowThrowsAccessDeniedOnDenied() {
-            assertThatThrownBy(() -> new AuthorizationChain(validOutcome()).scope("nonexistent").orThrow())
+            assertThatThrownBy(() -> new AuthorizationChain(validOutcome()).scope(new OAuthScope("nonexistent")).orThrow())
                     .isInstanceOf(io.authgate.domain.exception.AccessDeniedException.class)
                     .hasMessageContaining("nonexistent");
         }

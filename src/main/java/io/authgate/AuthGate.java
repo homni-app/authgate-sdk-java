@@ -8,6 +8,7 @@ import io.authgate.credentials.ClientCredentialsClient;
 import io.authgate.discovery.OidcDiscoveryClient;
 import io.authgate.domain.model.AuthorizationChain;
 import io.authgate.domain.model.IssuerUri;
+import io.authgate.domain.model.OAuthScope;
 import io.authgate.domain.model.ServiceToken;
 import io.authgate.domain.model.ValidationOutcome;
 import io.authgate.domain.service.TokenValidationRules;
@@ -202,7 +203,7 @@ public final class AuthGate {
      * @return cached or freshly acquired service token
      * @throws IllegalStateException if {@code clientSecret} is not configured
      */
-    public ServiceToken acquireServiceToken(Set<String> scopes) {
+    public ServiceToken acquireServiceToken(Set<OAuthScope> scopes) {
         return requireCredentialsClient().acquire(scopes);
     }
 

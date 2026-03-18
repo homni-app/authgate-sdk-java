@@ -3,6 +3,7 @@ package io.authgate.credentials;
 import io.authgate.application.port.EndpointDiscovery;
 import io.authgate.application.port.HttpTransport;
 import io.authgate.domain.exception.IdentityProviderException;
+import io.authgate.domain.model.OAuthScope;
 import io.authgate.domain.model.ServiceToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,21 +47,16 @@ public final class ClientCredentialsClient {
      * Acquires a service token with the given scopes.
      * Returns a cached token if not expiring soon; fetches a new one otherwise.
      */
-    public ServiceToken acquire(Set<String> scopes) {
+    public ServiceToken acquire(Set<OAuthScope> scopes) {
         Objects.requireNonNull(scopes, "scopes must not be null");
         if (scopes.isEmpty()) {
             throw new IllegalArgumentException("scopes must not be empty");
         }
-        for (String scope : scopes) {
-            if (scope == null || scope.isBlank()) {
-                throw new IllegalArgumentException("scope must not be null or blank");
-            }
-            if (!scope.equals(scope.strip()) || scope.chars().anyMatch(Character::isWhitespace)) {
-                throw new IllegalArgumentException("scope must not contain whitespace: '" + scope + "'");
-            }
-        }
 
-        var scopeKey = String.join(" ", new TreeSet<>(scopes));
+        var scopeKey = scopes.stream()
+                .map(OAuthScope::value)
+                .sorted()
+                .collect(java.util.stream.Collectors.joining(" "));
 
         if (tokenCache.size() >= MAX_CACHE_SIZE) {
             log.warn("Service token cache exceeded {} entries, clearing", MAX_CACHE_SIZE);
@@ -77,14 +73,16 @@ public final class ClientCredentialsClient {
         });
     }
 
-    private ServiceToken fetchToken(Set<String> scopes) {
+    private ServiceToken fetchToken(Set<OAuthScope> scopes) {
         var tokenEndpoint = endpointDiscovery.discover().tokenEndpoint();
 
         var params = new LinkedHashMap<String, String>();
         params.put("grant_type", "client_credentials");
         params.put("client_id", clientId);
         params.put("client_secret", clientSecret);
-        params.put("scope", String.join(" ", scopes));
+        params.put("scope", scopes.stream()
+                .map(OAuthScope::value)
+                .collect(java.util.stream.Collectors.joining(" ")));
 
         var response = transport.postForm(tokenEndpoint, params);
 

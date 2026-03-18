@@ -18,10 +18,10 @@ public sealed interface DenialReason {
     String description();
 
     /** Token lacks a required scope. */
-    record MissingScope(String scope) implements DenialReason {
+    record MissingScope(OAuthScope scope) implements DenialReason {
         @Override
         public String description() {
-            return "Missing required scope: " + scope;
+            return "Missing required scope: " + scope.value();
         }
     }
 

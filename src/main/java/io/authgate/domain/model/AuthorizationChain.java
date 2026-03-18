@@ -16,7 +16,7 @@ import java.util.Set;
 public final class AuthorizationChain {
 
     private final ValidationOutcome outcome;
-    private final Set<String> requiredScopes = new LinkedHashSet<>();
+    private final Set<OAuthScope> requiredScopes = new LinkedHashSet<>();
     private String requiredAudience;
     private String requiredSubject;
 
@@ -24,7 +24,7 @@ public final class AuthorizationChain {
         this.outcome = outcome;
     }
 
-    public AuthorizationChain scope(String scope) {
+    public AuthorizationChain scope(OAuthScope scope) {
         requiredScopes.add(scope);
         return this;
     }
@@ -55,7 +55,7 @@ public final class AuthorizationChain {
     }
 
     private AuthorizationResult checkPermissions(ValidatedToken token) {
-        for (String scope : requiredScopes) {
+        for (OAuthScope scope : requiredScopes) {
             if (!token.hasScope(scope)) {
                 return new AuthorizationResult.Denied(new DenialReason.MissingScope(scope));
             }

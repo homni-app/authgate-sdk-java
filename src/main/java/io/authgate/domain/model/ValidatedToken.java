@@ -14,7 +14,7 @@ public final class ValidatedToken {
 
     private final String subject;
     private final String issuer;
-    private final Set<String> scopes;
+    private final Set<OAuthScope> scopes;
     private final Set<String> audiences;
     private final Instant expiration;
 
@@ -41,7 +41,7 @@ public final class ValidatedToken {
     public String issuer() { return issuer; }
 
     /** Granted scopes ({@code scope} claim). Unmodifiable. */
-    public Set<String> scopes() { return scopes; }
+    public Set<OAuthScope> scopes() { return scopes; }
 
     /** Token audiences ({@code aud} claim). Unmodifiable. */
     public Set<String> audiences() { return audiences; }
@@ -57,7 +57,7 @@ public final class ValidatedToken {
     }
 
     /** Returns {@code true} if the token contains the given scope. */
-    public boolean hasScope(String scope) {
+    public boolean hasScope(OAuthScope scope) {
         return scopes.contains(scope);
     }
 
@@ -102,7 +102,7 @@ public final class ValidatedToken {
     public static final class Builder {
         private String subject;
         private String issuer;
-        private Set<String> scopes;
+        private Set<OAuthScope> scopes;
         private Set<String> audiences;
         private Instant expiration;
 
@@ -110,7 +110,7 @@ public final class ValidatedToken {
 
         public Builder subject(String v) { this.subject = v; return this; }
         public Builder issuer(String v) { this.issuer = v; return this; }
-        public Builder scopes(Set<String> v) { this.scopes = v; return this; }
+        public Builder scopes(Set<OAuthScope> v) { this.scopes = v; return this; }
         public Builder audiences(Set<String> v) { this.audiences = v; return this; }
         public Builder expiration(Instant v) { this.expiration = v; return this; }
 

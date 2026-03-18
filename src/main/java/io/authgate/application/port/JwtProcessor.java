@@ -1,5 +1,7 @@
 package io.authgate.application.port;
 
+import io.authgate.domain.model.OAuthScope;
+
 import java.time.Instant;
 import java.util.Set;
 
@@ -40,7 +42,7 @@ public interface JwtProcessor {
             String subject,
             String issuer,
             Instant expiration,
-            Set<String> scopes,
+            Set<OAuthScope> scopes,
             Set<String> audiences
     ) {}
 }

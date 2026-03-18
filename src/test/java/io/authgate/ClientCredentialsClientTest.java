@@ -1,18 +1,18 @@
 package io.authgate;
 
-import io.authgate.application.port.EndpointDiscovery;
 import io.authgate.application.port.HttpTransport;
 import io.authgate.credentials.ClientCredentialsClient;
+import io.authgate.domain.model.OAuthScope;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("ClientCredentialsClient — scope validation")
+@DisplayName("ClientCredentialsClient & OAuthScope — scope validation")
 class ClientCredentialsClientTest {
 
     private final ClientCredentialsClient client = new ClientCredentialsClient(
@@ -29,52 +29,68 @@ class ClientCredentialsClientTest {
             "test-secret"
     );
 
-    @Test
-    void rejectsNullScopes() {
-        assertThatThrownBy(() -> client.acquire(null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("scopes must not be null");
+    @Nested
+    @DisplayName("OAuthScope — value object validation")
+    class OAuthScopeTests {
+
+        @Test
+        void rejectsNullScope() {
+            assertThatThrownBy(() -> new OAuthScope(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("scope must not be null");
+        }
+
+        @Test
+        void rejectsBlankScope() {
+            assertThatThrownBy(() -> new OAuthScope("  "))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("scope must not be blank");
+        }
+
+        @Test
+        void rejectsScopeWithWhitespace() {
+            assertThatThrownBy(() -> new OAuthScope("user read"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("must not contain whitespace");
+        }
+
+        @Test
+        void rejectsScopeWithLeadingSpace() {
+            assertThatThrownBy(() -> new OAuthScope(" read"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("must not contain whitespace");
+        }
+
+        @Test
+        void rejectsScopeWithTab() {
+            assertThatThrownBy(() -> new OAuthScope("user\tread"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("must not contain whitespace");
+        }
+
+        @Test
+        void acceptsValidScope() {
+            var scope = new OAuthScope("user:read");
+            org.assertj.core.api.Assertions.assertThat(scope.value()).isEqualTo("user:read");
+        }
     }
 
-    @Test
-    void rejectsEmptyScopes() {
-        assertThatThrownBy(() -> client.acquire(Set.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not be empty");
-    }
+    @Nested
+    @DisplayName("ClientCredentialsClient — collection-level validation")
+    class CollectionValidationTests {
 
-    @Test
-    void rejectsNullScopeElement() {
-        assertThatThrownBy(() -> client.acquire(Collections.singleton(null)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not be null or blank");
-    }
+        @Test
+        void rejectsNullScopes() {
+            assertThatThrownBy(() -> client.acquire(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("scopes must not be null");
+        }
 
-    @Test
-    void rejectsBlankScope() {
-        assertThatThrownBy(() -> client.acquire(Set.of("  ")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not be null or blank");
-    }
-
-    @Test
-    void rejectsScopeWithWhitespace() {
-        assertThatThrownBy(() -> client.acquire(Set.of("user read")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not contain whitespace");
-    }
-
-    @Test
-    void rejectsScopeWithLeadingSpace() {
-        assertThatThrownBy(() -> client.acquire(Set.of(" read")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not contain whitespace");
-    }
-
-    @Test
-    void rejectsScopeWithTab() {
-        assertThatThrownBy(() -> client.acquire(Set.of("user\tread")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not contain whitespace");
+        @Test
+        void rejectsEmptyScopes() {
+            assertThatThrownBy(() -> client.acquire(Set.of()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("must not be empty");
+        }
     }
 }

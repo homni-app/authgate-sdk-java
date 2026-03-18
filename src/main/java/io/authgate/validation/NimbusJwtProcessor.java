@@ -16,6 +16,7 @@ import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.authgate.application.port.EndpointDiscovery;
 import io.authgate.application.port.JwtProcessor;
 import io.authgate.domain.exception.IdentityProviderException;
+import io.authgate.domain.model.OAuthScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,14 +137,20 @@ public final class NimbusJwtProcessor implements JwtProcessor {
         }
     }
 
-    private Set<String> extractScopes(JWTClaimsSet claims) {
+    private Set<OAuthScope> extractScopes(JWTClaimsSet claims) {
         var scope = extractStringClaim(claims, "scope");
         if (scope != null && !scope.isBlank()) {
-            return new HashSet<>(Arrays.asList(scope.split("\\s+")));
+            return Arrays.stream(scope.split("\\s+"))
+                    .map(OAuthScope::new)
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
         }
         try {
             var list = claims.getStringListClaim("scope");
-            if (list != null) return new HashSet<>(list);
+            if (list != null) {
+                return list.stream()
+                        .map(OAuthScope::new)
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+            }
         } catch (ParseException e) {
             log.trace("Scope claim is not a string list, skipping list extraction", e);
         }
