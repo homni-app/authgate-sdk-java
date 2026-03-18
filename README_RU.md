@@ -147,3 +147,4 @@ var sdk = AuthGate.builder(config)
 ## Лицензия
 
 Проект распространяется под лицензией [MIT](LICENSE).
+
