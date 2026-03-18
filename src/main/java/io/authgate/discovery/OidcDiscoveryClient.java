@@ -8,10 +8,12 @@ import io.authgate.application.port.EndpointDiscovery;
 import io.authgate.application.port.HttpTransport;
 import io.authgate.domain.exception.IdentityProviderException;
 import io.authgate.domain.model.DiscoveredEndpoints;
+import io.authgate.domain.model.EndpointUrl;
 import io.authgate.domain.model.IssuerUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +42,7 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
     private final Duration cacheTtl;
     private final String cacheKey;
     private final ReentrantLock fetchLock = new ReentrantLock();
+    private volatile DiscoveredEndpoints cachedEndpoints;
 
     public OidcDiscoveryClient(IssuerUri issuerUri, HttpTransport transport,
                                CacheStore cacheStore, Duration cacheTtl) {
@@ -56,12 +59,20 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
 
     @Override
     public DiscoveredEndpoints discover() {
+        var endpoints = cachedEndpoints;
+        if (endpoints != null) {
+            return endpoints;
+        }
         var doc = resolveDocument();
-        return new DiscoveredEndpoints(
-                new IssuerUri(doc.resolveIssuer()),
-                doc.resolveTokenEndpoint(),
-                doc.resolveJwksUri()
-        );
+
+        var tokenEndpoint = new EndpointUrl(doc.resolveTokenEndpoint());
+        var jwksUri = new EndpointUrl(doc.resolveJwksUri());
+        validateEndpointOrigin(tokenEndpoint, "token_endpoint");
+        validateEndpointOrigin(jwksUri, "jwks_uri");
+
+        endpoints = new DiscoveredEndpoints(this.issuerUri, tokenEndpoint, jwksUri);
+        cachedEndpoints = endpoints;
+        return endpoints;
     }
 
     private OidcDiscoveryDocument resolveDocument() {
@@ -89,6 +100,7 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
 
             var doc = fetchDiscoveryDocument();
             cacheStore.put(cacheKey, serialize(doc), cacheTtl);
+            cachedEndpoints = null;
             return doc;
         } finally {
             fetchLock.unlock();
@@ -110,8 +122,17 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
             return doc;
         } catch (IdentityProviderException e) {
             throw e;
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             throw new IdentityProviderException("Failed to fetch OIDC discovery from " + discoveryUrl, e);
+        }
+    }
+
+    private void validateEndpointOrigin(EndpointUrl endpoint, String fieldName) {
+        var issuerHost = URI.create(issuerUri.value()).getHost();
+        if (!endpoint.host().equals(issuerHost)) {
+            throw new IdentityProviderException(
+                    "OIDC discovery '" + fieldName + "' host '" + endpoint.host()
+                            + "' does not match issuer host '" + issuerHost + "'");
         }
     }
 

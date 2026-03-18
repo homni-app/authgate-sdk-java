@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Acquires and caches service tokens via OAuth 2.1 {@code client_credentials} grant.
@@ -56,16 +57,16 @@ public final class ClientCredentialsClient {
         var scopeKey = scopes.stream()
                 .map(OAuthScope::value)
                 .sorted()
-                .collect(java.util.stream.Collectors.joining(" "));
-
-        if (tokenCache.size() >= MAX_CACHE_SIZE) {
-            log.warn("Service token cache exceeded {} entries, clearing", MAX_CACHE_SIZE);
-            tokenCache.clear();
-        }
+                .collect(Collectors.joining(" "));
 
         return tokenCache.compute(scopeKey, (key, cached) -> {
             if (cached != null && !cached.isExpiringSoon()) {
                 return cached;
+            }
+            evictExpiredEntries();
+            if (tokenCache.size() >= MAX_CACHE_SIZE) {
+                log.warn("Service token cache at capacity ({}), evicting oldest entry", MAX_CACHE_SIZE);
+                evictOldest();
             }
             var token = fetchToken(scopes);
             log.info("Service token acquired for scopes: {}", key);
@@ -73,8 +74,19 @@ public final class ClientCredentialsClient {
         });
     }
 
+    private void evictExpiredEntries() {
+        tokenCache.entrySet().removeIf(e -> e.getValue().isExpiringSoon());
+    }
+
+    private void evictOldest() {
+        tokenCache.entrySet().stream()
+                .min(Comparator.comparing(e -> e.getValue().expiresAt()))
+                .map(Map.Entry::getKey)
+                .ifPresent(tokenCache::remove);
+    }
+
     private ServiceToken fetchToken(Set<OAuthScope> scopes) {
-        var tokenEndpoint = endpointDiscovery.discover().tokenEndpoint();
+        var tokenEndpoint = endpointDiscovery.discover().tokenEndpoint().value();
 
         var params = new LinkedHashMap<String, String>();
         params.put("grant_type", "client_credentials");
@@ -82,7 +94,7 @@ public final class ClientCredentialsClient {
         params.put("client_secret", clientSecret);
         params.put("scope", scopes.stream()
                 .map(OAuthScope::value)
-                .collect(java.util.stream.Collectors.joining(" ")));
+                .collect(Collectors.joining(" ")));
 
         var response = transport.postForm(tokenEndpoint, params);
 

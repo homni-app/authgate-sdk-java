@@ -17,6 +17,8 @@ import io.authgate.http.DefaultHttpTransport;
 import io.authgate.validation.NimbusJwtProcessor;
 import io.authgate.validation.TokenValidator;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -39,10 +41,11 @@ import java.util.Set;
  * }
  * }</pre>
  */
-public final class AuthGate {
+public final class AuthGate implements Closeable {
 
     private final TokenValidator tokenValidator;
     private final ClientCredentialsClient clientCredentialsClient;
+    private final HttpTransport httpTransport;
 
     public AuthGate(AuthGateConfiguration config) {
         this(config, new InMemoryCacheStore());
@@ -56,6 +59,8 @@ public final class AuthGate {
         Objects.requireNonNull(config);
         Objects.requireNonNull(cacheStore);
         Objects.requireNonNull(httpTransport);
+
+        this.httpTransport = httpTransport;
 
         var transport = new CircuitBreakerHttpTransport(
                 httpTransport,
@@ -205,7 +210,12 @@ public final class AuthGate {
         return requireCredentialsClient().acquire(scopes);
     }
 
-    // ── Internal ─────────────────────────────────────────────────
+    @Override
+    public void close() throws IOException {
+        if (httpTransport instanceof Closeable closeable) {
+            closeable.close();
+        }
+    }
 
     private ClientCredentialsClient requireCredentialsClient() {
         if (clientCredentialsClient == null) {

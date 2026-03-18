@@ -8,7 +8,7 @@ import java.util.Objects;
  * <p>Contains the three essential endpoints resolved from
  * {@code {issuerUri}/.well-known/openid-configuration}.</p>
  */
-public record DiscoveredEndpoints(IssuerUri issuerUri, String tokenEndpoint, String jwksUri) {
+public record DiscoveredEndpoints(IssuerUri issuerUri, EndpointUrl tokenEndpoint, EndpointUrl jwksUri) {
 
     public DiscoveredEndpoints {
         Objects.requireNonNull(issuerUri);

@@ -429,18 +429,20 @@ class DomainModelTest {
         @Test
         void exposesAllEndpoints() {
             var issuer = new IssuerUri("https://sso.example.com/");
-            var endpoints = new DiscoveredEndpoints(issuer, "https://sso.example.com/token", "https://sso.example.com/jwks");
+            var tokenEndpoint = new EndpointUrl("https://sso.example.com/token");
+            var jwksUri = new EndpointUrl("https://sso.example.com/jwks");
+            var endpoints = new DiscoveredEndpoints(issuer, tokenEndpoint, jwksUri);
 
             assertThat(endpoints.issuerUri()).isEqualTo(issuer);
-            assertThat(endpoints.tokenEndpoint()).isEqualTo("https://sso.example.com/token");
-            assertThat(endpoints.jwksUri()).isEqualTo("https://sso.example.com/jwks");
+            assertThat(endpoints.tokenEndpoint()).isEqualTo(tokenEndpoint);
+            assertThat(endpoints.jwksUri()).isEqualTo(jwksUri);
         }
 
         @Test
         void equalityCheck() {
             var issuer = new IssuerUri("https://sso.example.com/");
-            var a = new DiscoveredEndpoints(issuer, "https://sso.example.com/token", "https://sso.example.com/jwks");
-            var b = new DiscoveredEndpoints(issuer, "https://sso.example.com/token", "https://sso.example.com/jwks");
+            var a = new DiscoveredEndpoints(issuer, new EndpointUrl("https://sso.example.com/token"), new EndpointUrl("https://sso.example.com/jwks"));
+            var b = new DiscoveredEndpoints(issuer, new EndpointUrl("https://sso.example.com/token"), new EndpointUrl("https://sso.example.com/jwks"));
             assertThat(a).isEqualTo(b);
             assertThat(a.hashCode()).isEqualTo(b.hashCode());
         }

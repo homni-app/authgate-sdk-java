@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -75,10 +76,19 @@ public final class NimbusJwtProcessor implements JwtProcessor {
         return new ParsedClaims(
                 claims.getSubject(),
                 claims.getIssuer(),
-                claims.getExpirationTime() != null ? claims.getExpirationTime().toInstant() : null,
+                requireExpiration(claims),
                 extractScopes(claims),
                 claims.getAudience() != null ? new HashSet<>(claims.getAudience()) : Set.of()
         );
+    }
+
+    private Instant requireExpiration(JWTClaimsSet claims) {
+        var exp = claims.getExpirationTime();
+        if (exp == null) {
+            throw new IdentityProviderException(
+                    "JWT missing required 'exp' claim despite passing claims verification");
+        }
+        return exp.toInstant();
     }
 
     private void ensureProcessorInitialized() {
@@ -96,7 +106,7 @@ public final class NimbusJwtProcessor implements JwtProcessor {
         }
         try {
             if (jwtProcessor == null) {
-                initializeProcessor(endpointDiscovery.discover().jwksUri());
+                initializeProcessor(endpointDiscovery.discover().jwksUri().value());
             }
         } finally {
             initLock.unlock();

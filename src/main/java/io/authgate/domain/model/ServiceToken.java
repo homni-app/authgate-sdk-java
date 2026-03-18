@@ -40,6 +40,13 @@ public final class ServiceToken {
         return accessToken;
     }
 
+    /**
+     * Returns the token expiration instant.
+     */
+    public Instant expiresAt() {
+        return expiresAt;
+    }
+
     @Override
     public String toString() {
         return "ServiceToken[expiresAt=" + expiresAt + ", expiringSoon=" + isExpiringSoon() + "]";
