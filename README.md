@@ -119,4 +119,6 @@ var sdk = AuthGate.builder(config)
 
 1. **Token Exchange (RFC 8693)** — delegation and impersonation flows
 2. **Token Refresh** — automatic access token renewal via refresh tokens
-3. **Artifact optimization** — reduce SDK binary size and dependency footprint
+3. **UserInfo endpoint** — `getUserInfo(accessToken)` to retrieve user details (sub, scopes, roles) without extra IdP calls
+4. **Drop getters, use access modifiers** — expose fields via package-private access instead of getters (`token.accessToken` instead of `token.accessToken()`), reorganize packages as needed; avoid `public` fields
+5. **Artifact optimization** — reduce SDK binary size and dependency footprint
