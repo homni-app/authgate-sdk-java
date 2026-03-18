@@ -293,48 +293,46 @@ class DomainModelTest {
 
         @Test
         void freshTokenIsNotExpiringSoon() {
-            var body = Map.<String, Object>of("access_token", "acc", "expires_in", 3600);
-            var token = ServiceToken.fromTokenResponse(body);
+            var token = new ServiceToken("acc", Instant.now().plusSeconds(3600));
             assertThat(token.isExpiringSoon()).isFalse();
         }
 
         @Test
         void almostExpiredTokenIsExpiringSoon() {
-            var body = Map.<String, Object>of("access_token", "acc", "expires_in", 10);
-            var token = ServiceToken.fromTokenResponse(body);
+            var token = new ServiceToken("acc", Instant.now().plusSeconds(10));
             assertThat(token.isExpiringSoon()).isTrue();
         }
 
         @Test
         void exposesAccessToken() {
-            var body = Map.<String, Object>of("access_token", "my-token", "expires_in", 3600);
-            var token = ServiceToken.fromTokenResponse(body);
+            var token = new ServiceToken("my-token", Instant.now().plusSeconds(3600));
             assertThat(token.accessToken()).isEqualTo("my-token");
         }
 
         @Test
-        void fromTokenResponseParsesStandardResponse() {
-            var body = Map.<String, Object>of(
-                    "access_token", "eyJhbGciOiJSUzI1NiJ9",
-                    "expires_in", 300,
-                    "token_type", "Bearer"
-            );
-            var token = ServiceToken.fromTokenResponse(body);
-            assertThat(token.isExpiringSoon()).isFalse();
+        void rejectsNullAccessToken() {
+            assertThatThrownBy(() -> new ServiceToken(null, Instant.now().plusSeconds(60)))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("accessToken");
         }
 
         @Test
-        void fromTokenResponseThrowsWithoutAccessToken() {
-            var body = Map.<String, Object>of("expires_in", 300);
-            assertThatThrownBy(() -> ServiceToken.fromTokenResponse(body))
-                    .isInstanceOf(io.authgate.domain.exception.IdentityProviderException.class)
-                    .hasMessageContaining("access_token");
+        void rejectsBlankAccessToken() {
+            assertThatThrownBy(() -> new ServiceToken("  ", Instant.now().plusSeconds(60)))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("accessToken");
+        }
+
+        @Test
+        void rejectsNullExpiresAt() {
+            assertThatThrownBy(() -> new ServiceToken("token", null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("expiresAt");
         }
 
         @Test
         void toStringDoesNotLeakAccessToken() {
-            var body = Map.<String, Object>of("access_token", "super-secret", "expires_in", 3600);
-            var token = ServiceToken.fromTokenResponse(body);
+            var token = new ServiceToken("super-secret", Instant.now().plusSeconds(3600));
             assertThat(token.toString()).doesNotContain("super-secret");
         }
     }

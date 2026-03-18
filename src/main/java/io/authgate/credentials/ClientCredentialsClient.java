@@ -101,6 +101,6 @@ public final class ClientCredentialsClient {
                             + body.getOrDefault("error_description", ""));
         }
 
-        return ServiceToken.fromTokenResponse(body);
+        return ServiceTokenMapper.fromTokenResponse(body);
     }
 }
