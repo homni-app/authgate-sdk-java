@@ -9,6 +9,7 @@
 Handles JWT validation and client-credentials token acquisition — without framework dependencies.
 
 [![GitHub Release](https://img.shields.io/github/v/release/homni-labs/authgate-sdk-java)](https://github.com/homni-labs/authgate-sdk-java/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/homni-labs/authgate-sdk-java/ci.yml?branch=master)](https://github.com/homni-labs/authgate-sdk-java/actions/workflows/ci.yml)
 [![Javadoc](https://javadoc.io/badge2/io.github.homni-labs/authgate-sdk-java/javadoc.svg)](https://javadoc.io/doc/io.github.homni-labs/authgate-sdk-java)
 [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -160,7 +161,7 @@ var sdk = AuthGate.builder(config)
 | 🔲 | Artifact optimization — reduce binary size | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
 | ✅ | Publish to Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
 | ✅ | Gradle dependency support | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
-| 🔲 | CI pipeline — run tests on push/PR | — |
+| ✅ | CI pipeline — run tests on push/PR | [issue](https://github.com/homni-labs/authgate-sdk-java/issues/9) |
 
 ## Contributing
 
