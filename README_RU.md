@@ -8,7 +8,7 @@
 
 Валидация JWT и получение сервисных токенов через client-credentials — без привязки к фреймворку.
 
-[![GitHub Release](https://img.shields.io/github/v/release/homni-labs/authgate-sdk)](https://github.com/homni-labs/authgate-sdk/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/homni-labs/authgate-sdk)](https://github.com/homni-labs/authgate-sdk-java/releases)
 [![Javadoc](https://javadoc.io/badge2/io.github.homni-labs/authgate-sdk-java/javadoc.svg)](https://javadoc.io/doc/io.github.homni-labs/authgate-sdk-java)
 [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
