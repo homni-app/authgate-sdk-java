@@ -31,6 +31,18 @@ Handles JWT validation and client-credentials token acquisition — without fram
 </dependency>
 ```
 
+**Gradle (Kotlin DSL):**
+
+```kotlin
+implementation("io.github.homni-labs:authgate-sdk-java:0.0.1-alpha.1")
+```
+
+**Gradle (Groovy DSL):**
+
+```groovy
+implementation 'io.github.homni-labs:authgate-sdk-java:0.0.1-alpha.1'
+```
+
 ## Configuration
 
 | Parameter | Required | Default | Description |
@@ -147,7 +159,7 @@ var sdk = AuthGate.builder(config)
 | 🔲 | Drop getters, use access modifiers | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
 | 🔲 | Artifact optimization — reduce binary size | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
 | ✅ | Publish to Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
-| 🔲 | Gradle dependency support | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
+| ✅ | Gradle dependency support | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
 | 🔲 | CI pipeline — run tests on push/PR | — |
 
 ## Contributing

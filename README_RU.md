@@ -31,6 +31,18 @@
 </dependency>
 ```
 
+**Gradle (Kotlin DSL):**
+
+```kotlin
+implementation("io.github.homni-labs:authgate-sdk-java:0.0.1-alpha.1")
+```
+
+**Gradle (Groovy DSL):**
+
+```groovy
+implementation 'io.github.homni-labs:authgate-sdk-java:0.0.1-alpha.1'
+```
+
 ## Конфигурация
 
 | Параметр | Обязательный | По умолчанию | Описание |
@@ -147,7 +159,7 @@ var sdk = AuthGate.builder(config)
 | 🔲 | Отказ от геттеров в пользу модификаторов доступа | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
 | 🔲 | Оптимизация артефакта — снижение размера SDK | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
 | ✅ | Публикация в Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
-| 🔲 | Поддержка Gradle | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
+| ✅ | Поддержка Gradle | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
 | 🔲 | CI pipeline — прогон тестов на push/PR | — |
 
 ## Contributing
