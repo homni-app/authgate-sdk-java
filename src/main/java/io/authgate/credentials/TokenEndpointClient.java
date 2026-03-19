@@ -35,7 +35,7 @@ public final class TokenEndpointClient {
      * @throws IdentityProviderException on HTTP failure or OAuth error response
      */
     public ServiceToken requestToken(String grantType, Map<String, String> params) {
-        String tokenEndpoint = endpointDiscovery.discover().tokenEndpoint().value();
+        String tokenEndpoint = endpointDiscovery.discover().tokenEndpoint.value();
         HttpTransport.TransportResponse response = transport.postForm(tokenEndpoint, params);
 
         if (!response.isSuccessful()) {

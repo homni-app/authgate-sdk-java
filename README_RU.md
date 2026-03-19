@@ -6,7 +6,7 @@
 
 **Провайдер-независимая OIDC-библиотека для Java 21+**
 
-Валидация JWT и получение сервисных токенов через client-credentials — без привязки к фреймворку.
+Валидация JWT, получение сервисных токенов через client-credentials и запрос UserInfo — без привязки к фреймворку.
 
 [![GitHub Release](https://img.shields.io/github/v/release/homni-labs/authgate-sdk-java)](https://github.com/homni-labs/authgate-sdk-java/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/homni-labs/authgate-sdk-java/ci.yml?branch=master)](https://github.com/homni-labs/authgate-sdk-java/actions/workflows/ci.yml)
@@ -59,6 +59,7 @@ implementation 'io.github.homni-labs:authgate-sdk-java:0.0.1-alpha.1'
 | `circuitBreakerFailureThreshold` | нет | `5` | Число ошибок до размыкания circuit breaker |
 | `circuitBreakerResetTimeout` | нет | `30s` | Время до пробного вызова после размыкания |
 | `serviceTokenCacheSize` | нет | `64` | Макс. количество кэшированных сервисных токенов |
+| `userInfoCacheTtl` | нет | `5m` | TTL кэша ответа UserInfo |
 
 ## Использование
 
@@ -119,6 +120,17 @@ switch (sdk.authorizeFromHeader(authHeader).scope(new OAuthScope("profile")).eva
 
 </details>
 
+### UserInfo
+
+Получение OIDC-данных пользователя (email, имя и т.д.) с UserInfo-эндпоинта Identity Provider. URL эндпоинта определяется автоматически. Ответы кэшируются.
+
+```java
+UserInfo info = sdk.fetchUserInfo(accessToken);
+String email = info.email();
+String name = info.name();
+Map<String, Object> custom = info.customClaims();
+```
+
 ### Client Credentials
 
 Получение сервисных токенов для межсервисного взаимодействия. Токены кэшируются по набору scopes и обновляются автоматически.
@@ -156,8 +168,8 @@ var sdk = AuthGate.builder(config)
 |--------|-------|-------|
 | 🔲 | Token Exchange (RFC 8693) — делегирование и имперсонация | [issue](https://github.com/homni-app/authgate-sdk-java/issues/1) |
 | 🔲 | Token Refresh — автоматическое обновление access-токенов через refresh-токены | [issue](https://github.com/homni-app/authgate-sdk-java/issues/2) |
-| 🔲 | UserInfo-эндпоинт — получение данных пользователя без лишних запросов к IdP | [issue](https://github.com/homni-app/authgate-sdk-java/issues/3) |
-| 🔲 | Отказ от геттеров в пользу модификаторов доступа | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
+| ✅ | UserInfo-эндпоинт — получение данных пользователя без лишних запросов к IdP | [issue](https://github.com/homni-app/authgate-sdk-java/issues/3) |
+| ✅ | Отказ от геттеров в пользу модификаторов доступа | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
 | 🔲 | Оптимизация артефакта — снижение размера SDK | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
 | ✅ | Публикация в Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
 | ✅ | Поддержка Gradle | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |

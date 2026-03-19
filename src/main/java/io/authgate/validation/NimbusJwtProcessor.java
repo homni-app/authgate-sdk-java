@@ -106,7 +106,7 @@ public final class NimbusJwtProcessor implements JwtProcessor {
         }
         try {
             if (jwtProcessor == null) {
-                initializeProcessor(endpointDiscovery.discover().jwksUri().value());
+                initializeProcessor(endpointDiscovery.discover().jwksUri.value());
             }
         } finally {
             initLock.unlock();

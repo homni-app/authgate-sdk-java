@@ -74,6 +74,19 @@ public final class DefaultHttpTransport implements HttpTransport, Closeable {
     }
 
     @Override
+    public TransportResponse fetchJsonWithBearer(String endpoint, String bearerToken) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint))
+                .timeout(requestTimeout)
+                .header("Accept", JSON_CONTENT_TYPE)
+                .header("Authorization", "Bearer " + bearerToken)
+                .GET()
+                .build();
+
+        return execute(request);
+    }
+
+    @Override
     public void close() {
         httpClient.close();
     }

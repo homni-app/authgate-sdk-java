@@ -55,5 +55,42 @@ class AuthGateConfigurationTest {
 
         assertThat(config.clockSkewTolerance()).isEqualTo(Duration.ofSeconds(30));
         assertThat(config.requireHttps()).isTrue();
+        assertThat(config.userInfoCacheTtl()).isEqualTo(Duration.ofMinutes(5));
+    }
+
+    @Test
+    @DisplayName("userInfoCacheTtl accepts custom value")
+    void userInfoCacheTtlCustomValue() {
+        AuthGateConfiguration config = new AuthGateConfiguration.Builder()
+                .issuerUri("https://sso.example.com/")
+                .clientId("test")
+                .userInfoCacheTtl(Duration.ofMinutes(10))
+                .build();
+
+        assertThat(config.userInfoCacheTtl()).isEqualTo(Duration.ofMinutes(10));
+    }
+
+    @Test
+    @DisplayName("userInfoCacheTtl rejects negative duration")
+    void userInfoCacheTtlRejectsNegative() {
+        assertThatThrownBy(() -> new AuthGateConfiguration.Builder()
+                .issuerUri("https://sso.example.com/")
+                .clientId("test")
+                .userInfoCacheTtl(Duration.ofMinutes(-1))
+                .build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("userInfoCacheTtl");
+    }
+
+    @Test
+    @DisplayName("userInfoCacheTtl rejects zero duration")
+    void userInfoCacheTtlRejectsZero() {
+        assertThatThrownBy(() -> new AuthGateConfiguration.Builder()
+                .issuerUri("https://sso.example.com/")
+                .clientId("test")
+                .userInfoCacheTtl(Duration.ZERO)
+                .build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("userInfoCacheTtl");
     }
 }

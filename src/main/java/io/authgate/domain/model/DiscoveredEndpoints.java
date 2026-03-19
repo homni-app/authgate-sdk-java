@@ -5,14 +5,30 @@ import java.util.Objects;
 /**
  * Value object representing discovered OIDC endpoints from an Identity Provider.
  *
- * <p>Contains the three essential endpoints resolved from
- * {@code {issuerUri}/.well-known/openid-configuration}.</p>
+ * <p>Contains endpoints resolved from
+ * {@code {issuerUri}/.well-known/openid-configuration}.
+ * The {@code userInfoEndpoint} is nullable — RECOMMENDED but not REQUIRED per OIDC spec.</p>
  */
-public record DiscoveredEndpoints(IssuerUri issuerUri, EndpointUrl tokenEndpoint, EndpointUrl jwksUri) {
+public final class DiscoveredEndpoints {
 
-    public DiscoveredEndpoints {
-        Objects.requireNonNull(issuerUri);
-        Objects.requireNonNull(tokenEndpoint);
-        Objects.requireNonNull(jwksUri);
+    public final IssuerUri issuerUri;
+    public final EndpointUrl tokenEndpoint;
+    public final EndpointUrl jwksUri;
+    public final EndpointUrl userInfoEndpoint;
+
+    public DiscoveredEndpoints(IssuerUri issuerUri, EndpointUrl tokenEndpoint,
+                               EndpointUrl jwksUri, EndpointUrl userInfoEndpoint) {
+        this.issuerUri = Objects.requireNonNull(issuerUri);
+        this.tokenEndpoint = Objects.requireNonNull(tokenEndpoint);
+        this.jwksUri = Objects.requireNonNull(jwksUri);
+        this.userInfoEndpoint = userInfoEndpoint;
+    }
+
+    public DiscoveredEndpoints(IssuerUri issuerUri, EndpointUrl tokenEndpoint, EndpointUrl jwksUri) {
+        this(issuerUri, tokenEndpoint, jwksUri, null);
+    }
+
+    public boolean hasUserInfoEndpoint() {
+        return userInfoEndpoint != null;
     }
 }

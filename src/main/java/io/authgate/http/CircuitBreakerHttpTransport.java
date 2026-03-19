@@ -49,6 +49,12 @@ public final class CircuitBreakerHttpTransport implements HttpTransport {
         return execute(() -> delegate.fetchJson(endpoint));
     }
 
+    @Override
+    public TransportResponse fetchJsonWithBearer(String endpoint, String bearerToken) {
+        rejectIfOpen();
+        return execute(() -> delegate.fetchJsonWithBearer(endpoint, bearerToken));
+    }
+
     private void rejectIfOpen() {
         if (consecutiveFailures.get() >= failureThreshold) {
             long elapsed = System.currentTimeMillis() - lastFailureTime.get();

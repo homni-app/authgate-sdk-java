@@ -59,6 +59,7 @@ public final class AuthGateConfiguration {
     private final int circuitBreakerFailureThreshold;
     private final Duration circuitBreakerResetTimeout;
     private final int serviceTokenCacheSize;
+    private final Duration userInfoCacheTtl;
 
     private AuthGateConfiguration(Builder builder) {
         Objects.requireNonNull(builder.issuerUri, "issuerUri must not be null");
@@ -124,6 +125,11 @@ public final class AuthGateConfiguration {
         if (this.serviceTokenCacheSize <= 0) {
             throw new IllegalArgumentException("serviceTokenCacheSize must be positive");
         }
+
+        this.userInfoCacheTtl = Objects.requireNonNullElse(builder.userInfoCacheTtl, Duration.ofMinutes(5));
+        if (this.userInfoCacheTtl.isNegative() || this.userInfoCacheTtl.isZero()) {
+            throw new IllegalArgumentException("userInfoCacheTtl must be positive");
+        }
     }
 
     /** OIDC provider base URL. Never {@code null}. */
@@ -159,6 +165,9 @@ public final class AuthGateConfiguration {
     /** Maximum number of cached service tokens (per scope-set). Always positive. */
     public int serviceTokenCacheSize() { return serviceTokenCacheSize; }
 
+    /** UserInfo response cache TTL. Never {@code null}. Default: 5 minutes. */
+    public Duration userInfoCacheTtl() { return userInfoCacheTtl; }
+
     public static final class Builder {
         private String issuerUri;
         private String clientId;
@@ -171,6 +180,7 @@ public final class AuthGateConfiguration {
         private int circuitBreakerFailureThreshold = 5;
         private Duration circuitBreakerResetTimeout;
         private int serviceTokenCacheSize = 64;
+        private Duration userInfoCacheTtl;
 
         public Builder() {}
 
@@ -185,6 +195,7 @@ public final class AuthGateConfiguration {
         public Builder circuitBreakerFailureThreshold(int v)   { this.circuitBreakerFailureThreshold = v; return this; }
         public Builder circuitBreakerResetTimeout(Duration v)  { this.circuitBreakerResetTimeout = v; return this; }
         public Builder serviceTokenCacheSize(int v)              { this.serviceTokenCacheSize = v; return this; }
+        public Builder userInfoCacheTtl(Duration v)                    { this.userInfoCacheTtl = v; return this; }
 
         public AuthGateConfiguration build() {
             return new AuthGateConfiguration(this);

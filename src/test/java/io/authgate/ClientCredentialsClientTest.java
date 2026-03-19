@@ -25,6 +25,9 @@ class ClientCredentialsClientTest {
                 @Override public TransportResponse fetchJson(String endpoint) {
                     throw new UnsupportedOperationException();
                 }
+                @Override public TransportResponse fetchJsonWithBearer(String endpoint, String bearerToken) {
+                    throw new UnsupportedOperationException();
+                }
             });
 
     private final ClientCredentialsClient client = new ClientCredentialsClient(

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -65,12 +66,18 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
         }
         OidcDiscoveryDocument doc = resolveDocument();
 
-        EndpointUrl tokenEndpoint = new EndpointUrl(doc.resolveTokenEndpoint());
-        EndpointUrl jwksUri = new EndpointUrl(doc.resolveJwksUri());
+        EndpointUrl tokenEndpoint = new EndpointUrl(doc.tokenEndpoint);
+        EndpointUrl jwksUri = new EndpointUrl(doc.jwksUri);
         validateEndpointOrigin(tokenEndpoint, "token_endpoint");
         validateEndpointOrigin(jwksUri, "jwks_uri");
 
-        endpoints = new DiscoveredEndpoints(this.issuerUri, tokenEndpoint, jwksUri);
+        EndpointUrl userInfoEndpoint = null;
+        if (doc.userInfoEndpoint != null) {
+            userInfoEndpoint = new EndpointUrl(doc.userInfoEndpoint);
+            validateEndpointOrigin(userInfoEndpoint, "userinfo_endpoint");
+        }
+
+        endpoints = new DiscoveredEndpoints(this.issuerUri, tokenEndpoint, jwksUri, userInfoEndpoint);
         cachedEndpoints = endpoints;
         return endpoints;
     }
@@ -138,11 +145,14 @@ public final class OidcDiscoveryClient implements EndpointDiscovery {
 
     private String serialize(OidcDiscoveryDocument doc) {
         try {
-            return MAPPER.writeValueAsString(Map.of(
-                    "issuer", doc.resolveIssuer(),
-                    "token_endpoint", doc.resolveTokenEndpoint(),
-                    "jwks_uri", doc.resolveJwksUri()
-            ));
+            Map<String, String> map = new LinkedHashMap<>();
+            map.put("issuer", doc.issuer);
+            map.put("token_endpoint", doc.tokenEndpoint);
+            map.put("jwks_uri", doc.jwksUri);
+            if (doc.userInfoEndpoint != null) {
+                map.put("userinfo_endpoint", doc.userInfoEndpoint);
+            }
+            return MAPPER.writeValueAsString(map);
         } catch (JsonProcessingException e) {
             throw new IdentityProviderException("Failed to serialize discovery document", e);
         }

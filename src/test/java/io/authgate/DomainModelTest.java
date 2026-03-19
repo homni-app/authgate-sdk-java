@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
@@ -184,6 +186,50 @@ class DomainModelTest {
             assertThatThrownBy(() -> new IssuerUri("http://sso.example.com", true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("HTTPS");
+        }
+    }
+
+    @Nested
+    @DisplayName("UserInfo")
+    class UserInfoTests {
+
+        @Test
+        void rejectsNullSubject() {
+            assertThatThrownBy(() -> new UserInfo(null, null, null, null, null, null, null, null, null, null, null, null, null, null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("sub");
+        }
+
+        @Test
+        void rejectsBlankSubject() {
+            assertThatThrownBy(() -> new UserInfo("  ", null, null, null, null, null, null, null, null, null, null, null, null, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("sub");
+        }
+
+        @Test
+        void customClaimsAreUnmodifiable() {
+            Map<String, Object> mutable = new HashMap<>();
+            mutable.put("org", "acme");
+            UserInfo info = new UserInfo("user-1", null, null, null, null, null, null, null, null, null, null, null, null, mutable);
+
+            assertThat(info.customClaims()).containsEntry("org", "acme");
+            assertThatThrownBy(() -> info.customClaims().put("hack", "yes"))
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void nullCustomClaimsBecomesEmptyMap() {
+            UserInfo info = new UserInfo("user-1", null, null, null, null, null, null, null, null, null, null, null, null, null);
+            assertThat(info.customClaims()).isEmpty();
+        }
+
+        @Test
+        void toStringMasksPii() {
+            UserInfo info = new UserInfo("user-123", "user@example.com", true, "John Doe", null, null, null, null, null, null, null, null, null, null);
+            assertThat(info.toString()).isEqualTo("UserInfo[sub=***]");
+            assertThat(info.toString()).doesNotContain("user-123");
+            assertThat(info.toString()).doesNotContain("user@example.com");
         }
     }
 

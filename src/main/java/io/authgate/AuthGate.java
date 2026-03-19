@@ -11,9 +11,11 @@ import io.authgate.domain.model.AuthorizationChain;
 import io.authgate.domain.model.IssuerUri;
 import io.authgate.domain.model.OAuthScope;
 import io.authgate.domain.model.ServiceToken;
+import io.authgate.domain.model.UserInfo;
 import io.authgate.domain.model.ValidationOutcome;
 import io.authgate.http.CircuitBreakerHttpTransport;
 import io.authgate.http.DefaultHttpTransport;
+import io.authgate.userinfo.UserInfoClient;
 import io.authgate.validation.NimbusJwtProcessor;
 import io.authgate.validation.TokenValidator;
 
@@ -54,13 +56,16 @@ public final class AuthGate implements Closeable {
 
     private final TokenValidator tokenValidator;
     private final ClientCredentialsClient clientCredentialsClient;
+    private final UserInfoClient userInfoClient;
     private final HttpTransport httpTransport;
 
     private AuthGate(TokenValidator tokenValidator,
                      ClientCredentialsClient clientCredentialsClient,
+                     UserInfoClient userInfoClient,
                      HttpTransport httpTransport) {
         this.tokenValidator = tokenValidator;
         this.clientCredentialsClient = clientCredentialsClient;
+        this.userInfoClient = userInfoClient;
         this.httpTransport = httpTransport;
     }
 
@@ -119,7 +124,10 @@ public final class AuthGate implements Closeable {
                             config.clientSecret(), config.serviceTokenCacheSize())
                     : null;
 
-            return new AuthGate(tokenValidator, clientCredentialsClient, transport);
+            UserInfoClient userInfoClient = new UserInfoClient(
+                    discoveryClient, circuitBreaker, cache, config.userInfoCacheTtl());
+
+            return new AuthGate(tokenValidator, clientCredentialsClient, userInfoClient, transport);
         }
     }
 
@@ -224,6 +232,29 @@ public final class AuthGate implements Closeable {
      */
     public AuthorizationChain authorizeFromHeader(String authorizationHeader) {
         return new AuthorizationChain(tokenValidator.validateFromHeader(authorizationHeader));
+    }
+
+    // ── UserInfo ─────────────────────────────────────────────────
+
+    /**
+     * Fetches OIDC UserInfo claims for the given access token.
+     *
+     * <p>Calls the Identity Provider's {@code userinfo_endpoint} (discovered automatically)
+     * and returns standard OIDC claims (email, name, etc.). Responses are cached
+     * to avoid redundant IdP calls.</p>
+     *
+     * <pre>{@code
+     * UserInfo info = sdk.fetchUserInfo(accessToken);
+     * String email = info.email();
+     * }</pre>
+     *
+     * @param accessToken a valid OAuth 2.1 access token
+     * @return user info claims — never {@code null}
+     * @throws io.authgate.domain.exception.IdentityProviderException if the IdP call fails
+     *         or the provider does not advertise a userinfo_endpoint
+     */
+    public UserInfo fetchUserInfo(String accessToken) {
+        return userInfoClient.fetch(accessToken);
     }
 
     // ── Client Credentials ───────────────────────────────────────

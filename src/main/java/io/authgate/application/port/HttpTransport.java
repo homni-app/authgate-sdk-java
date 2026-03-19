@@ -11,6 +11,8 @@ public interface HttpTransport {
 
     TransportResponse fetchJson(String endpoint);
 
+    TransportResponse fetchJsonWithBearer(String endpoint, String bearerToken);
+
     record TransportResponse(int statusCode, Map<String, Object> body) {
         public boolean isSuccessful() {
             return statusCode >= 200 && statusCode < 300;

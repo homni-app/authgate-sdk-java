@@ -11,26 +11,16 @@ import java.util.Map;
  */
 final class OidcDiscoveryDocument {
 
-    private final String issuer;
-    private final String tokenEndpoint;
-    private final String jwksUri;
+    final String issuer;
+    final String tokenEndpoint;
+    final String jwksUri;
+    final String userInfoEndpoint;
 
     OidcDiscoveryDocument(Map<String, Object> raw) {
         this.issuer = requireString(raw, "issuer");
         this.tokenEndpoint = requireString(raw, "token_endpoint");
         this.jwksUri = requireString(raw, "jwks_uri");
-    }
-
-    String resolveTokenEndpoint() {
-        return tokenEndpoint;
-    }
-
-    String resolveJwksUri() {
-        return jwksUri;
-    }
-
-    String resolveIssuer() {
-        return issuer;
+        this.userInfoEndpoint = optionalString(raw, "userinfo_endpoint");
     }
 
     private String requireString(Map<String, Object> map, String key) {
@@ -39,6 +29,11 @@ final class OidcDiscoveryDocument {
             throw new IdentityProviderException("OIDC discovery document missing required field: " + key);
         }
         return val.toString();
+    }
+
+    private String optionalString(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        return val != null ? val.toString() : null;
     }
 
 }

@@ -6,7 +6,7 @@
 
 **Provider-agnostic OIDC library for Java 21+**
 
-Handles JWT validation and client-credentials token acquisition — without framework dependencies.
+Handles JWT validation, client-credentials token acquisition, and UserInfo retrieval — without framework dependencies.
 
 [![GitHub Release](https://img.shields.io/github/v/release/homni-labs/authgate-sdk-java)](https://github.com/homni-labs/authgate-sdk-java/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/homni-labs/authgate-sdk-java/ci.yml?branch=master)](https://github.com/homni-labs/authgate-sdk-java/actions/workflows/ci.yml)
@@ -59,6 +59,7 @@ implementation 'io.github.homni-labs:authgate-sdk-java:0.0.1-alpha.1'
 | `circuitBreakerFailureThreshold` | no | `5` | Failures before circuit breaker opens |
 | `circuitBreakerResetTimeout` | no | `30s` | Time before a probe call after opening |
 | `serviceTokenCacheSize` | no | `64` | Max cached service tokens |
+| `userInfoCacheTtl` | no | `5m` | UserInfo response cache TTL |
 
 ## Usage
 
@@ -119,6 +120,17 @@ switch (sdk.authorizeFromHeader(authHeader).scope(new OAuthScope("profile")).eva
 
 </details>
 
+### UserInfo
+
+Fetch OIDC identity claims (email, name, etc.) from the Identity Provider's UserInfo endpoint. The endpoint URL is discovered automatically. Responses are cached.
+
+```java
+UserInfo info = sdk.fetchUserInfo(accessToken);
+String email = info.email();
+String name = info.name();
+Map<String, Object> custom = info.customClaims();
+```
+
 ### Client Credentials
 
 Service token acquisition for service-to-service communication. Tokens are cached per scope-set and refreshed automatically.
@@ -156,8 +168,8 @@ var sdk = AuthGate.builder(config)
 |--------|---------|-------|
 | 🔲 | Token Exchange (RFC 8693) — delegation and impersonation flows | [issue](https://github.com/homni-app/authgate-sdk-java/issues/1) |
 | 🔲 | Token Refresh — automatic access token renewal via refresh tokens | [issue](https://github.com/homni-app/authgate-sdk-java/issues/2) |
-| 🔲 | UserInfo endpoint — retrieve user details without extra IdP calls | [issue](https://github.com/homni-app/authgate-sdk-java/issues/3) |
-| 🔲 | Drop getters, use access modifiers | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
+| ✅ | UserInfo endpoint — retrieve user details without extra IdP calls | [issue](https://github.com/homni-app/authgate-sdk-java/issues/3) |
+| ✅ | Drop getters, use access modifiers | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
 | 🔲 | Artifact optimization — reduce binary size | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
 | ✅ | Publish to Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
 | ✅ | Gradle dependency support | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
