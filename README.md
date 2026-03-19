@@ -22,7 +22,7 @@ Handles JWT validation and client-credentials token acquisition — without fram
 
 ## Installation
 
-**Maven** (from [Maven Central](https://central.sonatype.com/artifact/io.authgate/authgate-sdk-java)):
+**Maven** (from [Maven Central](https://repo1.maven.org/maven2/io/github/homni-labs/authgate-sdk-java/)):
 
 ```xml
 <dependency>
