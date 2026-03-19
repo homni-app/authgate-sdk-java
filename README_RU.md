@@ -19,11 +19,13 @@
 
 ## Подключение
 
+**Maven** (из [Maven Central](https://central.sonatype.com/artifact/io.authgate/authgate-sdk-java)):
+
 ```xml
 <dependency>
-    <groupId>io.authgate</groupId>
+    <groupId>io.github.homni-labs</groupId>
     <artifactId>authgate-sdk-java</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.0.1-alpha.1</version>
 </dependency>
 ```
 
@@ -142,7 +144,7 @@ var sdk = AuthGate.builder(config)
 | 🔲 | UserInfo-эндпоинт — получение данных пользователя без лишних запросов к IdP | [issue](https://github.com/homni-app/authgate-sdk-java/issues/3) |
 | 🔲 | Отказ от геттеров в пользу модификаторов доступа | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
 | 🔲 | Оптимизация артефакта — снижение размера SDK | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
-| 🔲 | Публикация в Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
+| ✅ | Публикация в Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
 | 🔲 | Поддержка Gradle | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
 
 ## Contributing

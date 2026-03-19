@@ -19,11 +19,13 @@ Handles JWT validation and client-credentials token acquisition — without fram
 
 ## Installation
 
+**Maven** (from [Maven Central](https://central.sonatype.com/artifact/io.authgate/authgate-sdk-java)):
+
 ```xml
 <dependency>
-    <groupId>io.authgate</groupId>
+    <groupId>io.github.homni-labs</groupId>
     <artifactId>authgate-sdk-java</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.0.1-alpha.1</version>
 </dependency>
 ```
 
@@ -142,7 +144,7 @@ var sdk = AuthGate.builder(config)
 | 🔲 | UserInfo endpoint — retrieve user details without extra IdP calls | [issue](https://github.com/homni-app/authgate-sdk-java/issues/3) |
 | 🔲 | Drop getters, use access modifiers | [issue](https://github.com/homni-app/authgate-sdk-java/issues/4) |
 | 🔲 | Artifact optimization — reduce binary size | [issue](https://github.com/homni-app/authgate-sdk-java/issues/5) |
-| 🔲 | Publish to Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
+| ✅ | Publish to Maven Central | [issue](https://github.com/homni-app/authgate-sdk-java/issues/6) |
 | 🔲 | Gradle dependency support | [issue](https://github.com/homni-app/authgate-sdk-java/issues/7) |
 
 ## Contributing
